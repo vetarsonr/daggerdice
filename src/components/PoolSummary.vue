@@ -8,7 +8,6 @@
     </div>
     <p class="pool-summary__notation">{{ formatPool(pool, modifier) }}</p>
     <button class="pool-summary__roll" :disabled="!hasDice || disabled" type="button" @click="emit('roll')">
-      <DieIcon type="d20" />
       <span>{{ disabled ? "Tiro in corso…" : "Tira" }}</span>
     </button>
   </section>

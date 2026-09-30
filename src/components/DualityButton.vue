@@ -48,10 +48,9 @@ const emit = defineEmits<{ roll: [] }>();
 
 .duality-button__die {
   display: grid;
-  width: 36px;
   height: 36px;
   place-items: center;
-  border: 1px solid currentColor;
+  border: none;
   border-radius: 6px;
 }
 
@@ -60,7 +59,7 @@ const emit = defineEmits<{ roll: [] }>();
 }
 
 .duality-button__die--fear {
-  color: var(--fear);
+  color: var(--fear-text);
 }
 
 .duality-button__text {

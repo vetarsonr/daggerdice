@@ -10,6 +10,7 @@
   --obr-selected: color-mix(in srgb, var(--obr-text) 16%, var(--obr-paper));
   --hope: #e8c547;
   --fear: #7b2fbe;
+  --fear-text: color-mix(in srgb, var(--fear) 50%, var(--obr-text));
   color: var(--obr-text);
   background: transparent;
   font-family: Roboto, Arial, sans-serif;

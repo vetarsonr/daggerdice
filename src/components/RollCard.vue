@@ -62,6 +62,8 @@ function roleLabel(die: RolledDie): string {
   if (die.role === "advantage") return " Vantaggio";
   if (die.role === "disadvantage") return " Svantaggio";
   if (die.role === "dropped") return " scartato";
+  if (die.d100Part === "tens") return " decine";
+  if (die.d100Part === "ones") return " unità";
   return "";
 }
 </script>
@@ -71,23 +73,9 @@ function roleLabel(die: RolledDie): string {
   width: 100%;
   padding: 12px;
   border: 1px solid var(--obr-divider);
-  border-left: 3px solid var(--obr-text-secondary);
   border-radius: 6px;
   background: var(--obr-paper);
   color: var(--obr-text);
-}
-
-.roll-card--hope {
-  border-left-color: var(--hope);
-}
-
-.roll-card--fear {
-  border-left-color: var(--fear);
-}
-
-.roll-card--critical {
-  border-top-color: var(--fear);
-  border-left-color: var(--hope);
 }
 
 .roll-card--clickable {
@@ -119,7 +107,7 @@ function roleLabel(die: RolledDie): string {
 
 .roll-card--fear .roll-card__title,
 .roll-card--fear .roll-card__total {
-  color: var(--fear);
+  color: var(--fear-text);
 }
 
 .roll-card--critical .roll-card__title,
@@ -186,9 +174,12 @@ function roleLabel(die: RolledDie): string {
   white-space: nowrap;
 }
 
-.roll-card__die--hope,
-.roll-card__die--fear {
+.roll-card__die--hope {
   color: var(--die-color);
+}
+
+.roll-card__die--fear {
+  color: var(--fear-text);
 }
 
 .roll-card__die small {
@@ -226,7 +217,6 @@ function roleLabel(die: RolledDie): string {
 
 .roll-card--compact {
   padding: 8px 9px;
-  border-left-width: 2px;
   border-radius: 6px;
 }
 

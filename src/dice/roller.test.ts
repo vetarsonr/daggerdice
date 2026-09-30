@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { displayDieValue, formatRollFormula } from "./format";
 import { rollDieValue, secureRandomInt, type RandomInt } from "./rng";
 import { d100Value, rollDuality, rollPool } from "./roller";
 import { DIE_TYPES, type DicePool } from "./types";
@@ -108,6 +109,8 @@ describe("pool rolls", () => {
 
     expect(hundred.total).toBe(100);
     expect(hundred.dice.map((die) => die.value)).toEqual([0, 0]);
+    expect(hundred.dice.map(displayDieValue)).toEqual(["0", "0"]);
+    expect(formatRollFormula(hundred)).toBe("2d10 (1d100)");
     expect(one.total).toBe(1);
     expect(ninety.total).toBe(90);
   });

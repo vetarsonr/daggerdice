@@ -32,9 +32,6 @@ export function formatPool(pool: DicePool, modifier = 0): string {
 }
 
 export function displayDieValue(die: RolledDie): string {
-  if (die.d100Part === "tens") {
-    return die.value === 0 ? "00" : `${die.value}0`;
-  }
   return String(die.value);
 }
 
@@ -70,15 +67,23 @@ export function formatRollFormula(event: RollEvent): string {
   }
 
   const counts = new Map<string, number>();
+  let d100Count = 0;
   for (const die of event.dice) {
     if (die.role === "dropped") continue;
-    const label = die.d100Part ? "d100" : die.type;
-    counts.set(label, (counts.get(label) ?? 0) + (label === "d100" && die.d100Part === "ones" ? 0 : 1));
+    if (die.d100Part === "tens") {
+      d100Count += 1;
+      continue;
+    }
+    if (die.d100Part === "ones") continue;
+    counts.set(die.type, (counts.get(die.type) ?? 0) + 1);
   }
 
   const terms = Array.from(counts.entries())
     .filter(([, count]) => count > 0)
     .map(([type, count]) => `${count}${type}`);
+  if (d100Count > 0) {
+    terms.push(`${d100Count * 2}d10 (${d100Count}d100)`);
+  }
   if (event.mode === "advantage") terms.push("vantaggio d20");
   if (event.mode === "disadvantage") terms.push("svantaggio d20");
   if (event.modifier) terms.push(formatModifier(event.modifier));

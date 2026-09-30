@@ -16,13 +16,13 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { displayDieValue } from "../dice/format";
-import { DiceEngine } from "../engine/DiceEngine";
+import { DiceBoxEngine } from "../engine/DiceBoxEngine";
 import type { RolledDie } from "../dice/types";
 
 const props = defineProps<{ dice: RolledDie[] }>();
 const canvasHost = ref<HTMLElement>();
 const fallback = ref(false);
-let engine: DiceEngine | undefined;
+let engine: DiceBoxEngine | undefined;
 let removeResizeListener: (() => void) | undefined;
 let resizeObserver: ResizeObserver | undefined;
 
@@ -58,7 +58,7 @@ onMounted(async () => {
   }
 
   try {
-    engine = new DiceEngine(canvasHost.value);
+    engine = new DiceBoxEngine(canvasHost.value);
     const resize = () => engine?.resize();
     window.addEventListener("resize", resize);
     removeResizeListener = () => window.removeEventListener("resize", resize);
@@ -93,20 +93,31 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
+.dice-scene__canvas {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+}
+
 .dice-scene {
   position: absolute;
   inset: 0;
+  isolation: isolate;
   background: transparent;
 }
 
 .dice-scene__canvas :deep(canvas) {
   display: block;
+  position: absolute;
+  z-index: 1;
+  inset: 0;
   width: 100% !important;
   height: 100% !important;
 }
 
 .dice-scene__fallback {
   position: absolute;
+  z-index: 2;
   inset: 0;
   display: flex;
   align-items: center;
