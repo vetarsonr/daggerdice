@@ -2,10 +2,10 @@ import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 
-const githubPagesBase = "/owlbear-rodeo-dh-dice/";
+const githubPagesBase = "/daggerdice/";
 
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH ?? (process.env.GITHUB_ACTIONS ? githubPagesBase : "/"),
+  base: "/daggerdice/",
   plugins: [vue()],
   server: {
     cors: true,

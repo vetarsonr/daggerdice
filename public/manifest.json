@@ -4,12 +4,12 @@
   "manifest_version": 1,
   "author": "DaggerDice IT",
   "description": "Lanciadadi 3D per Daggerheart pronto all'uso, senza account esterni.",
-  "icon": "/icon.svg",
-  "background_url": "/background.html",
+  "icon": "/daggerdice/icon.svg",
+  "background_url": "/daggerdice/background.html",
   "action": {
     "title": "DaggerDice IT",
-    "icon": "/icon-toolbar.svg",
-    "popover": "/index.html",
+    "icon": "/daggerdice/icon-toolbar.svg",
+    "popover": "/daggerdice/index.html",
     "width": 400,
     "height": 560
   }
