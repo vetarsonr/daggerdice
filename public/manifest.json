@@ -1,0 +1,16 @@
+{
+  "name": "DaggerDice IT",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "author": "DaggerDice IT",
+  "description": "Tiri di dadi 3D per Daggerheart, senza account esterni.",
+  "icon": "/icon.svg",
+  "background_url": "/background.html",
+  "action": {
+    "title": "DaggerDice IT",
+    "icon": "/icon.svg",
+    "popover": "/index.html",
+    "width": 340,
+    "height": 560
+  }
+}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Daggerheart Dice">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#e8c547"/>
+      <stop offset=".52" stop-color="#9c54d6"/>
+      <stop offset="1" stop-color="#7b2fbe"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#171321"/>
+  <path fill="url(#g)" d="M64 16 106 40v48l-42 24-42-24V40l42-24Zm0 12-29 17v34l29 17 29-17V45L64 28Zm0 10 17 10v20L64 78 47 68V48l17-10Zm0 14-5 3v6l5 3 5-3v-6l-5-3Z"/>
+</svg>
