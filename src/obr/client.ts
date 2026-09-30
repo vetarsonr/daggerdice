@@ -2,9 +2,11 @@ import OBR from "@owlbear-rodeo/sdk";
 import { isRollEvent } from "../dice/roller";
 import type { RollEvent, RollerPlayer } from "../dice/types";
 import {
+  ANIMATION_COMPLETE_CHANNEL,
+  DEV_ANIMATION_COMPLETE_EVENT,
   DEV_BROADCAST_CHANNEL,
   DEV_ROLL_EVENT,
-  OVERLAY_POPOVER_ID,
+  OVERLAY_MODAL_ID,
   RESULT_POPOVER_ID,
   ROLL_CHANNEL,
 } from "./constants";
@@ -84,6 +86,67 @@ export function subscribeToRolls(callback: (event: RollEvent) => void): () => vo
   };
 }
 
+interface AnimationCompleteMessage {
+  rollId: string;
+}
+
+export interface RollAnimationWaiter {
+  completed: Promise<void>;
+  cancel: () => void;
+}
+
+function isAnimationCompleteMessage(value: unknown): value is AnimationCompleteMessage {
+  return Boolean(value && typeof value === "object" && typeof (value as { rollId?: unknown }).rollId === "string");
+}
+
+/** Waits for the local overlay to report that its physics simulation has settled. */
+export function waitForRollAnimation(rollId: string, timeoutMs: number): RollAnimationWaiter {
+  let resolveCompleted: (() => void) | undefined;
+  let removeListener: (() => void) | undefined;
+  let timeout: number | undefined;
+  let finished = false;
+  const completed = new Promise<void>((resolve) => {
+    resolveCompleted = resolve;
+  });
+
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    if (timeout !== undefined) window.clearTimeout(timeout);
+    removeListener?.();
+    resolveCompleted?.();
+  };
+
+  const onMessage = (message: unknown) => {
+    if (isAnimationCompleteMessage(message) && message.rollId === rollId) {
+      finish();
+    }
+  };
+
+  if (isObrAvailable()) {
+    removeListener = OBR.broadcast.onMessage(ANIMATION_COMPLETE_CHANNEL, (event) => onMessage(event.data));
+  } else {
+    const onDevelopmentComplete = (event: Event) => onMessage((event as CustomEvent<unknown>).detail);
+    window.addEventListener(DEV_ANIMATION_COMPLETE_EVENT, onDevelopmentComplete);
+    removeListener = () => window.removeEventListener(DEV_ANIMATION_COMPLETE_EVENT, onDevelopmentComplete);
+  }
+
+  timeout = window.setTimeout(finish, timeoutMs);
+  return { completed, cancel: finish };
+}
+
+/** Reports completion only to pages owned by the current Owlbear client. */
+export async function reportRollAnimationComplete(rollId: string): Promise<void> {
+  const message: AnimationCompleteMessage = { rollId };
+  if (!isObrAvailable()) {
+    window.dispatchEvent(new CustomEvent<AnimationCompleteMessage>(DEV_ANIMATION_COMPLETE_EVENT, { detail: message }));
+    return;
+  }
+
+  await waitForObr();
+  await OBR.broadcast.sendMessage(ANIMATION_COMPLETE_CHANNEL, message, { destination: "LOCAL" });
+}
+
 function rollUrl(page: "overlay.html" | "result.html", event: RollEvent): string {
   const url = new URL(page, window.location.href);
   url.searchParams.set("roll", JSON.stringify(event));
@@ -114,25 +177,19 @@ async function viewportSize(): Promise<{ width: number; height: number }> {
 export async function openRollOverlay(event: RollEvent): Promise<void> {
   if (!isObrAvailable()) return;
 
-  const { width, height } = await viewportSize();
-  await OBR.popover.open({
-    id: OVERLAY_POPOVER_ID,
+  await OBR.modal.open({
+    id: OVERLAY_MODAL_ID,
     url: rollUrl("overlay.html", event),
-    width,
-    height,
-    anchorReference: "POSITION",
-    anchorPosition: { left: width / 2, top: height / 2 },
-    anchorOrigin: { horizontal: "CENTER", vertical: "CENTER" },
-    transformOrigin: { horizontal: "CENTER", vertical: "CENTER" },
-    marginThreshold: 0,
+    fullScreen: true,
+    hideBackdrop: true,
     hidePaper: true,
-    disableClickAway: true,
+    disablePointerEvents: true,
   });
 }
 
 export async function closeRollOverlay(): Promise<void> {
   if (isObrAvailable()) {
-    await OBR.popover.close(OVERLAY_POPOVER_ID);
+    await OBR.modal.close(OVERLAY_MODAL_ID);
   }
 }
 

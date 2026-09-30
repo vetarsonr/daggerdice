@@ -1,2 +1,2 @@
-/** Maximum time reserved for the physics roll before the result card opens. */
-export const diceAnimationDuration = 4_800;
+/** Safety limit used only if the renderer cannot report that physics has settled. */
+export const maxDiceAnimationDuration = 16_000;

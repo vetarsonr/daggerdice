@@ -20,17 +20,29 @@ import { DiceBoxEngine } from "../engine/DiceBoxEngine";
 import type { RolledDie } from "../dice/types";
 
 const props = defineProps<{ dice: RolledDie[] }>();
+const emit = defineEmits<{ complete: [] }>();
 const canvasHost = ref<HTMLElement>();
 const fallback = ref(false);
 let engine: DiceBoxEngine | undefined;
 let removeResizeListener: (() => void) | undefined;
 let resizeObserver: ResizeObserver | undefined;
+let completionReported = false;
 
-function play(): void {
+function reportCompletion(): void {
+  if (completionReported) return;
+  completionReported = true;
+  emit("complete");
+}
+
+async function play(): Promise<void> {
   if (!engine) return;
-  void engine.play(props.dice).catch(() => {
+  try {
+    await engine.play(props.dice);
+  } catch {
     fallback.value = true;
-  });
+  } finally {
+    reportCompletion();
+  }
 }
 
 function playWhenSized(attempts = 0): void {
@@ -40,7 +52,7 @@ function playWhenSized(attempts = 0): void {
     window.requestAnimationFrame(() => playWhenSized(attempts + 1));
     return;
   }
-  play();
+  void play();
 }
 
 function fallbackColor(die: RolledDie): string {
@@ -54,6 +66,7 @@ function fallbackTextColor(die: RolledDie): string {
 onMounted(async () => {
   if (!canvasHost.value) {
     fallback.value = true;
+    reportCompletion();
     return;
   }
 
@@ -70,12 +83,17 @@ onMounted(async () => {
     window.requestAnimationFrame(() => playWhenSized());
   } catch {
     fallback.value = true;
+    reportCompletion();
   }
 });
 
 watch(
   () => props.dice,
-  () => play(),
+  () => {
+    completionReported = false;
+    fallback.value = false;
+    void play();
+  },
 );
 
 onBeforeUnmount(() => {

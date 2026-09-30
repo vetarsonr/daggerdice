@@ -1,14 +1,21 @@
 <template>
   <main class="dice-overlay" aria-label="Animazione dei dadi">
-    <DiceScene v-if="roll" :dice="roll.dice" />
+    <DiceScene v-if="roll" :dice="roll.dice" @complete="reportCompletion" />
   </main>
 </template>
 
 <script setup lang="ts">
 import DiceScene from "../components/DiceScene.vue";
-import { rollFromLocation } from "../obr/client";
+import { reportRollAnimationComplete, rollFromLocation } from "../obr/client";
 
 const roll = rollFromLocation();
+let completionReported = false;
+
+function reportCompletion(): void {
+  if (!roll || completionReported) return;
+  completionReported = true;
+  void reportRollAnimationComplete(roll.id).catch(() => undefined);
+}
 </script>
 
 <style scoped>
@@ -28,6 +35,6 @@ const roll = rollFromLocation();
   height: 100%;
   overflow: hidden;
   background: transparent;
-  pointer-events: all;
+  pointer-events: none;
 }
 </style>

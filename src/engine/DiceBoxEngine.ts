@@ -46,7 +46,7 @@ export class DiceBoxEngine {
       light_intensity: 1.7,
       baseScale: 105,
       strength: 1,
-      iterationLimit: 240,
+      iterationLimit: 900,
       wallInset: 0,
       spawnEdgeInset: 0.02,
       floorShadowOpacity: 0.22,

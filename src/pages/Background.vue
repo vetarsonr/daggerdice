@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from "vue";
 import type { RollEvent } from "../dice/types";
-import { diceAnimationDuration } from "../engine/constants";
+import { maxDiceAnimationDuration } from "../engine/constants";
 import {
   closeRollOverlay,
   getCurrentPlayer,
@@ -13,6 +13,7 @@ import {
   openRollOverlay,
   prefersReducedMotion,
   subscribeToRolls,
+  waitForRollAnimation,
   waitForObr,
 } from "../obr/client";
 import { appendPrivateHistory, appendSharedHistory } from "../obr/history";
@@ -24,10 +25,6 @@ let unsubscribe: (() => void) | undefined;
 let active = true;
 const playerId = getCurrentPlayer().then((player) => player.id).catch(() => undefined);
 
-function wait(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
-}
-
 async function processQueue(): Promise<void> {
   if (processing) return;
   processing = true;
@@ -37,14 +34,16 @@ async function processQueue(): Promise<void> {
     if (!roll) continue;
 
     const animate = readSettings().show3d && !prefersReducedMotion();
+    const animation = animate ? waitForRollAnimation(roll.id, maxDiceAnimationDuration) : undefined;
     let overlayOpened = false;
     try {
       if (animate) {
         await openRollOverlay(roll);
         overlayOpened = true;
-        await wait(diceAnimationDuration);
+        await animation?.completed;
       }
     } finally {
+      animation?.cancel();
       if (overlayOpened) {
         await closeRollOverlay().catch(() => undefined);
       }
