@@ -22,6 +22,7 @@ export interface RolledDie {
 export type RollKind = "duality" | "pool";
 export type RollMode = "normal" | "advantage" | "disadvantage";
 export type RollOutcome = "hope" | "fear" | "critical";
+export type RollVisibility = "all" | "private" | "gm";
 
 export interface RollEvent {
   id: string;
@@ -29,7 +30,7 @@ export interface RollEvent {
   playerId: string;
   playerName: string;
   playerRole: "GM" | "PLAYER";
-  visibility: "all" | "private";
+  visibility: RollVisibility;
   mode: RollMode;
   modifier: number;
   dice: RolledDie[];
@@ -44,6 +45,17 @@ export interface RollerPlayer {
   id: string;
   name: string;
   role: "GM" | "PLAYER";
+}
+
+/** Whether a client should render and retain a roll received from the room. */
+export function canViewRoll(roll: Pick<RollEvent, "playerId" | "visibility">, viewer: RollerPlayer): boolean {
+  if (roll.visibility === "all") return true;
+  if (roll.playerId === viewer.id) return true;
+  return roll.visibility === "gm" && viewer.role === "GM";
+}
+
+export function isRestrictedVisibility(visibility: RollVisibility): boolean {
+  return visibility === "private" || visibility === "gm";
 }
 
 export interface RollBaseOptions {

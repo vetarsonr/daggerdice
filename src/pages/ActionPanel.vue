@@ -62,10 +62,14 @@ const roller = useRoller(settings, history);
 const StandalonePlayback = defineAsyncComponent(() => import("../components/StandalonePlayback.vue"));
 const pool = reactive<DicePool>(createEmptyPool());
 const obrAvailable = isObrAvailable();
-const visibilityOptions: SegmentOption[] = [
-  { value: "all", label: "Tutti" },
-  { value: "private", label: "Solo io" },
-];
+const visibilityOptions = computed<SegmentOption[]>(() => {
+  const options: SegmentOption[] = [{ value: "all", label: "Tutti" }];
+  if (roller.player.role === "PLAYER") {
+    options.push({ value: "gm", label: "GM e io" });
+  }
+  options.push({ value: "private", label: "Solo io" });
+  return options;
+});
 
 const hasPool = computed(() => poolDieCount(pool) > 0);
 const poolModeAllowed = computed(() => isD20ModeAllowed(pool));
@@ -117,6 +121,15 @@ watch(
     }
   },
   { deep: true },
+);
+
+watch(
+  () => roller.player.role,
+  (role) => {
+    if (role === "GM" && settings.visibility === "gm") {
+      settings.visibility = "all";
+    }
+  },
 );
 
 onMounted(() => {

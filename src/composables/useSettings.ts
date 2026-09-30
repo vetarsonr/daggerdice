@@ -30,7 +30,7 @@ export function readSettings(): DiceSettings {
   try {
     const parsed = JSON.parse(localStorage.getItem(LOCAL_SETTINGS_KEY) ?? "{}") as Partial<DiceSettings>;
     return {
-      visibility: parsed.visibility === "private" ? "private" : "all",
+      visibility: parsed.visibility === "private" || parsed.visibility === "gm" ? parsed.visibility : "all",
       mode: isMode(parsed.mode) ? parsed.mode : "normal",
       modifier: clampModifier(parsed.modifier),
       show3d: parsed.show3d !== false,

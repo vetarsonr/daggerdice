@@ -1,11 +1,12 @@
 import { computed, onUnmounted, ref } from "vue";
-import type { RollEvent } from "../dice/types";
+import { isRestrictedVisibility, type RollEvent } from "../dice/types";
 import {
   appendPrivateHistory,
   appendSharedHistory,
   clearSharedHistory,
   getPrivateHistory,
   getSharedHistory,
+  subscribeToPrivateHistory,
   subscribeToSharedHistory,
 } from "../obr/history";
 
@@ -20,6 +21,7 @@ export function useHistory() {
   const privateRolls = ref<RollEvent[]>([]);
   const entries = computed(() => mergeHistory(shared.value, privateRolls.value));
   let unsubscribe: (() => void) | undefined;
+  let unsubscribePrivate: (() => void) | undefined;
 
   async function load(): Promise<void> {
     [shared.value, privateRolls.value] = await Promise.all([getSharedHistory(), Promise.resolve(getPrivateHistory())]);
@@ -27,10 +29,14 @@ export function useHistory() {
     unsubscribe = subscribeToSharedHistory((rolls) => {
       shared.value = rolls;
     });
+    unsubscribePrivate?.();
+    unsubscribePrivate = subscribeToPrivateHistory((rolls) => {
+      privateRolls.value = rolls;
+    });
   }
 
   async function record(event: RollEvent): Promise<void> {
-    if (event.visibility === "private") {
+    if (isRestrictedVisibility(event.visibility)) {
       privateRolls.value = appendPrivateHistory(event);
       return;
     }
@@ -43,7 +49,10 @@ export function useHistory() {
     shared.value = [];
   }
 
-  onUnmounted(() => unsubscribe?.());
+  onUnmounted(() => {
+    unsubscribe?.();
+    unsubscribePrivate?.();
+  });
 
   return { entries, load, record, clearShared };
 }

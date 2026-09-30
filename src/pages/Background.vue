@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from "vue";
-import type { RollEvent } from "../dice/types";
+import { canViewRoll, type RollerPlayer, type RollEvent } from "../dice/types";
 import { maxDiceAnimationDuration } from "../engine/constants";
 import {
   closeRollOverlay,
@@ -23,7 +23,6 @@ const queue: RollEvent[] = [];
 let processing = false;
 let unsubscribe: (() => void) | undefined;
 let active = true;
-const playerId = getCurrentPlayer().then((player) => player.id).catch(() => undefined);
 
 async function processQueue(): Promise<void> {
   if (processing) return;
@@ -55,14 +54,16 @@ async function processQueue(): Promise<void> {
   processing = false;
 }
 
-async function recordRollFromSender(roll: RollEvent): Promise<void> {
+async function recordVisibleRoll(roll: RollEvent, viewer: RollerPlayer): Promise<void> {
   try {
-    if ((await playerId) !== roll.playerId) return;
-    if (roll.visibility === "private") {
+    if (roll.visibility !== "all") {
       appendPrivateHistory(roll);
       return;
     }
-    await appendSharedHistory(roll);
+
+    if (viewer.id === roll.playerId) {
+      await appendSharedHistory(roll);
+    }
   } catch {
     // The visible roll still completes if the room metadata write is temporarily unavailable.
   }
@@ -71,8 +72,17 @@ async function recordRollFromSender(roll: RollEvent): Promise<void> {
 onMounted(async () => {
   await waitForObr();
   if (!active) return;
+  let viewer: RollerPlayer;
+  try {
+    viewer = await getCurrentPlayer();
+  } catch {
+    return;
+  }
+  if (!active) return;
+
   unsubscribe = subscribeToRolls((roll) => {
-    void recordRollFromSender(roll);
+    if (!canViewRoll(roll, viewer)) return;
+    void recordVisibleRoll(roll, viewer);
     queue.push(roll);
     void processQueue();
   });

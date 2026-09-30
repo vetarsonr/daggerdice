@@ -19,7 +19,7 @@
         <p class="roll-card__player">
           {{ roll.playerName }}
           <span v-if="roll.playerRole === 'GM'" class="roll-card__badge">GM</span>
-          <span v-if="roll.visibility === 'private'" class="roll-card__badge roll-card__badge--private">Privato</span>
+          <span v-if="roll.visibility !== 'all'" class="roll-card__badge roll-card__badge--private">{{ visibilityLabel }}</span>
         </p>
         <p v-if="!compact" class="roll-card__detail">
           <template v-for="(die, index) in roll.dice" :key="`${die.type}-${index}`">
@@ -55,6 +55,7 @@ const emit = defineEmits<{ close: [] }>();
 const title = computed(() =>
   props.roll.kind === "duality" ? `Dualità: ${outcomeLabel(props.roll.outcome)}` : "Tiro libero",
 );
+const visibilityLabel = computed(() => (props.roll.visibility === "gm" ? "GM e io" : "Privato"));
 
 function roleLabel(die: RolledDie): string {
   if (die.role === "hope") return " Speranza";

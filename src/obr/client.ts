@@ -50,7 +50,7 @@ export async function sendRoll(event: RollEvent): Promise<void> {
 
   await waitForObr();
   await OBR.broadcast.sendMessage(ROLL_CHANNEL, event, {
-    destination: event.visibility === "all" ? "ALL" : "LOCAL",
+    destination: event.visibility === "private" ? "LOCAL" : "ALL",
   });
 }
 

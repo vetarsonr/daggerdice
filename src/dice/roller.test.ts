@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { displayDieValue, formatRollFormula } from "./format";
 import { rollDieValue, secureRandomInt, type RandomInt } from "./rng";
-import { d100Value, rollDuality, rollPool } from "./roller";
+import { d100Value, isRollEvent, rollDuality, rollPool } from "./roller";
 import { DIE_TYPES, type DicePool } from "./types";
 
 const player = { id: "player", name: "Dev", role: "GM" as const };
@@ -70,6 +70,16 @@ describe("duality rolls", () => {
     expect(advantage.dice.at(-1)?.role).toBe("advantage");
     expect(disadvantage.total).toBe(8);
     expect(disadvantage.dice.at(-1)?.role).toBe("disadvantage");
+  });
+
+  it("accepts GM and player visibility in roll events", () => {
+    const roll = rollDuality(
+      { player, visibility: "gm", mode: "normal", modifier: 0 },
+      fixedDependencies([8, 3]),
+    );
+
+    expect(roll.visibility).toBe("gm");
+    expect(isRollEvent(roll)).toBe(true);
   });
 });
 

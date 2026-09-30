@@ -23,6 +23,7 @@ import {
   closeRollOverlay,
   openRollOverlay,
   reportRollAnimationComplete,
+  sendRoll,
   waitForRollAnimation,
 } from "./client";
 
@@ -106,6 +107,16 @@ describe("3D roll overlay", () => {
       "dh-dice/animation-complete",
       { rollId: "roll-1" },
       { destination: "LOCAL" },
+    );
+  });
+
+  it("broadcasts a GM and player roll so the GM can receive it", async () => {
+    await sendRoll({ ...roll, visibility: "gm" });
+
+    expect(mocks.sdk.broadcast.sendMessage).toHaveBeenCalledWith(
+      "dh-dice/roll",
+      expect.objectContaining({ visibility: "gm" }),
+      { destination: "ALL" },
     );
   });
 });

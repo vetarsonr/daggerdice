@@ -208,7 +208,7 @@ export function isRollEvent(value: unknown): value is RollEvent {
     typeof event.playerId === "string" &&
     typeof event.playerName === "string" &&
     (event.playerRole === "GM" || event.playerRole === "PLAYER") &&
-    (event.visibility === "all" || event.visibility === "private") &&
+    (event.visibility === "all" || event.visibility === "private" || event.visibility === "gm") &&
     (event.mode === "normal" || event.mode === "advantage" || event.mode === "disadvantage") &&
     typeof event.modifier === "number" &&
     Array.isArray(event.dice) &&

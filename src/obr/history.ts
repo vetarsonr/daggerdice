@@ -1,6 +1,6 @@
 import OBR from "@owlbear-rodeo/sdk";
 import { isRollEvent } from "../dice/roller";
-import type { RollEvent } from "../dice/types";
+import { isRestrictedVisibility, type RollEvent } from "../dice/types";
 import {
   DEV_HISTORY_EVENT,
   DEV_ROOM_HISTORY_KEY,
@@ -10,18 +10,18 @@ import {
 } from "./constants";
 import { isObrAvailable, waitForObr } from "./client";
 
-function parseRolls(value: unknown, visibility?: RollEvent["visibility"]): RollEvent[] {
+function parseRolls(value: unknown, include?: (roll: RollEvent) => boolean): RollEvent[] {
   if (!Array.isArray(value)) return [];
   return value
     .filter(isRollEvent)
-    .filter((roll) => !visibility || roll.visibility === visibility)
+    .filter((roll) => !include || include(roll))
     .sort((first, second) => second.timestamp - first.timestamp)
     .slice(0, MAX_HISTORY_ENTRIES);
 }
 
-function readLocal(key: string, visibility?: RollEvent["visibility"]): RollEvent[] {
+function readLocal(key: string, include?: (roll: RollEvent) => boolean): RollEvent[] {
   try {
-    return parseRolls(JSON.parse(localStorage.getItem(key) ?? "[]"), visibility);
+    return parseRolls(JSON.parse(localStorage.getItem(key) ?? "[]"), include);
   } catch {
     return [];
   }
@@ -37,12 +37,12 @@ function writeLocal(key: string, rolls: RollEvent[]): void {
 
 export async function getSharedHistory(): Promise<RollEvent[]> {
   if (!isObrAvailable()) {
-    return readLocal(DEV_ROOM_HISTORY_KEY, "all");
+    return readLocal(DEV_ROOM_HISTORY_KEY, (roll) => roll.visibility === "all");
   }
 
   await waitForObr();
   const metadata = await OBR.room.getMetadata();
-  return parseRolls(metadata[ROOM_HISTORY_KEY], "all");
+  return parseRolls(metadata[ROOM_HISTORY_KEY], (roll) => roll.visibility === "all");
 }
 
 export async function appendSharedHistory(event: RollEvent): Promise<RollEvent[]> {
@@ -74,21 +74,31 @@ export async function clearSharedHistory(): Promise<void> {
 
 export function subscribeToSharedHistory(callback: (rolls: RollEvent[]) => void): () => void {
   if (!isObrAvailable()) {
-    const onHistoryChange = () => callback(readLocal(DEV_ROOM_HISTORY_KEY, "all"));
+    const onHistoryChange = () => callback(readLocal(DEV_ROOM_HISTORY_KEY, (roll) => roll.visibility === "all"));
     window.addEventListener(DEV_HISTORY_EVENT, onHistoryChange);
     return () => window.removeEventListener(DEV_HISTORY_EVENT, onHistoryChange);
   }
 
-  return OBR.room.onMetadataChange((metadata) => callback(parseRolls(metadata[ROOM_HISTORY_KEY], "all")));
+  return OBR.room.onMetadataChange((metadata) => callback(parseRolls(metadata[ROOM_HISTORY_KEY], (roll) => roll.visibility === "all")));
 }
 
 export function getPrivateHistory(): RollEvent[] {
-  return readLocal(LOCAL_PRIVATE_HISTORY_KEY, "private");
+  return readLocal(LOCAL_PRIVATE_HISTORY_KEY, (roll) => isRestrictedVisibility(roll.visibility));
 }
 
 export function appendPrivateHistory(event: RollEvent): RollEvent[] {
-  if (event.visibility !== "private") return getPrivateHistory();
+  if (!isRestrictedVisibility(event.visibility)) return getPrivateHistory();
   const next = [event, ...getPrivateHistory().filter((roll) => roll.id !== event.id)].slice(0, MAX_HISTORY_ENTRIES);
   writeLocal(LOCAL_PRIVATE_HISTORY_KEY, next);
   return next;
+}
+
+export function subscribeToPrivateHistory(callback: (rolls: RollEvent[]) => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === LOCAL_PRIVATE_HISTORY_KEY) {
+      callback(getPrivateHistory());
+    }
+  };
+  window.addEventListener("storage", onStorage);
+  return () => window.removeEventListener("storage", onStorage);
 }
