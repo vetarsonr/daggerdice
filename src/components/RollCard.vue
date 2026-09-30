@@ -26,8 +26,8 @@
             <span v-if="index > 0" class="roll-card__operator">{{ die.role === 'disadvantage' ? '−' : '+' }}</span>
             <span
               class="roll-card__die"
-              :class="{ 'roll-card__die--dropped': die.role === 'dropped' }"
-              :style="{ '--die-color': die.color }"
+              :class="[`roll-card__die--${die.role}`, { 'roll-card__die--dropped': die.role === 'dropped' }]"
+              :style="die.role === 'hope' || die.role === 'fear' ? { '--die-color': die.color } : undefined"
             >
               [{{ displayDieValue(die) }}]<small>{{ roleLabel(die) }}</small>
             </span>
@@ -69,36 +69,29 @@ function roleLabel(die: RolledDie): string {
 <style scoped>
 .roll-card {
   width: 100%;
-  padding: 12px 13px;
-  border: 1px solid rgb(255 255 255 / 13%);
-  border-left: 3px solid #8d8298;
-  border-radius: 11px;
-  background: linear-gradient(135deg, #2b2335, #1d1825);
-  color: #f7f2fb;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 31%);
+  padding: 12px;
+  border: 1px solid var(--obr-divider);
+  border-left: 3px solid var(--obr-text-secondary);
+  border-radius: 6px;
+  background: var(--obr-paper);
+  color: var(--obr-text);
 }
 
 .roll-card--hope {
-  border-left-color: #e8c547;
+  border-left-color: var(--hope);
 }
 
 .roll-card--fear {
-  border-left-color: #9b58d2;
+  border-left-color: var(--fear);
 }
 
 .roll-card--critical {
-  border-left-color: #fff0a1;
-  box-shadow: 0 0 20px rgb(232 197 71 / 35%), 0 8px 24px rgb(0 0 0 / 31%);
-  animation: critical-glow 1.4s ease-in-out infinite alternate;
+  border-top-color: var(--fear);
+  border-left-color: var(--hope);
 }
 
 .roll-card--clickable {
   cursor: pointer;
-}
-
-.roll-card--clickable:focus-visible {
-  outline: 2px solid #d7b6f4;
-  outline-offset: 2px;
 }
 
 .roll-card__topline,
@@ -115,28 +108,28 @@ function roleLabel(die: RolledDie): string {
 }
 
 .roll-card__title {
-  color: #e8deef;
+  color: var(--obr-text);
   font-size: 12px;
 }
 
 .roll-card--hope .roll-card__title,
 .roll-card--hope .roll-card__total {
-  color: #f2d662;
+  color: var(--hope);
 }
 
 .roll-card--fear .roll-card__title,
 .roll-card--fear .roll-card__total {
-  color: #bd83ec;
+  color: var(--fear);
 }
 
 .roll-card--critical .roll-card__title,
 .roll-card--critical .roll-card__total {
-  color: #fff2a5;
+  color: var(--hope);
 }
 
 .roll-card__time {
   flex: 0 0 auto;
-  color: #a99fb9;
+  color: var(--obr-text-secondary);
   font-size: 10px;
 }
 
@@ -153,7 +146,7 @@ function roleLabel(die: RolledDie): string {
 .roll-card__player {
   gap: 5px;
   margin: 5px 0;
-  color: #fff;
+  color: var(--obr-text);
   font-size: 12px;
   font-weight: 700;
 }
@@ -161,8 +154,8 @@ function roleLabel(die: RolledDie): string {
 .roll-card__badge {
   padding: 1px 4px;
   border-radius: 4px;
-  background: #564363;
-  color: #f4eaff;
+  background: var(--obr-selected);
+  color: var(--obr-text);
   font-size: 8px;
   font-weight: 850;
   letter-spacing: 0.04em;
@@ -170,50 +163,55 @@ function roleLabel(die: RolledDie): string {
 }
 
 .roll-card__badge--private {
-  background: #49414f;
-  color: #d9d2e0;
+  background: var(--obr-control);
+  color: var(--obr-text-secondary);
 }
 
 .roll-card__detail {
   flex-wrap: wrap;
   gap: 3px;
   margin: 0;
-  color: #ddd4e6;
+  color: var(--obr-text-secondary);
   font-size: 12px;
 }
 
 .roll-card__operator {
-  color: #a99fb9;
+  color: var(--obr-text-secondary);
   font-weight: 800;
 }
 
 .roll-card__die {
-  color: var(--die-color);
+  color: var(--obr-text);
   font-weight: 900;
   white-space: nowrap;
 }
 
+.roll-card__die--hope,
+.roll-card__die--fear {
+  color: var(--die-color);
+}
+
 .roll-card__die small {
   margin-left: 2px;
-  color: #c8c0d1;
+  color: var(--obr-text-secondary);
   font-size: 9px;
   font-weight: 650;
 }
 
 .roll-card__die--dropped {
-  color: #8a8491;
+  color: var(--obr-text-disabled);
   text-decoration: line-through;
 }
 
 .roll-card__modifier {
-  color: #f1eaf7;
+  color: var(--obr-text);
   font-weight: 800;
 }
 
 .roll-card__formula {
   margin: 5px 0 0;
   overflow: hidden;
-  color: #a99fb9;
+  color: var(--obr-text-secondary);
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -221,7 +219,7 @@ function roleLabel(die: RolledDie): string {
 
 .roll-card__total {
   flex: 0 0 auto;
-  color: #f6effb;
+  color: var(--obr-text);
   font-size: 30px;
   line-height: 1;
 }
@@ -229,8 +227,7 @@ function roleLabel(die: RolledDie): string {
 .roll-card--compact {
   padding: 8px 9px;
   border-left-width: 2px;
-  border-radius: 8px;
-  box-shadow: none;
+  border-radius: 6px;
 }
 
 .roll-card--compact .roll-card__player {
@@ -246,12 +243,4 @@ function roleLabel(die: RolledDie): string {
   font-size: 22px;
 }
 
-@keyframes critical-glow {
-  from {
-    box-shadow: 0 0 10px rgb(232 197 71 / 20%), 0 8px 24px rgb(0 0 0 / 31%);
-  }
-  to {
-    box-shadow: 0 0 25px rgb(232 197 71 / 48%), 0 8px 24px rgb(0 0 0 / 31%);
-  }
-}
 </style>

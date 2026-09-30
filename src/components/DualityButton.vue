@@ -5,7 +5,7 @@
       <span class="duality-button__die duality-button__die--fear"><DieIcon type="d12" /></span>
     </span>
     <span class="duality-button__text">
-      <strong>◆ Dualità ◆</strong>
+      <strong>Dualità</strong>
       <small>{{ disabled ? "Tiro in corso…" : "Speranza e Paura" }}</small>
     </span>
   </button>
@@ -26,19 +26,15 @@ const emit = defineEmits<{ roll: [] }>();
   align-items: center;
   justify-content: center;
   gap: 12px;
-  border: 1px solid rgb(232 197 71 / 55%);
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgb(232 197 71 / 18%), rgb(123 47 190 / 22%));
-  color: #fff;
-  box-shadow: inset 0 0 24px rgb(123 47 190 / 16%), 0 6px 18px rgb(0 0 0 / 22%);
-  transition: transform 140ms ease, box-shadow 140ms ease;
+  border: 1px solid var(--obr-divider);
+  border-radius: 6px;
+  background: var(--obr-control);
+  color: var(--obr-text);
 }
 
-.duality-button:hover:not(:disabled),
-.duality-button:focus-visible:not(:disabled) {
-  box-shadow: inset 0 0 30px rgb(232 197 71 / 19%), 0 8px 22px rgb(123 47 190 / 34%);
-  outline: none;
-  transform: translateY(-1px);
+.duality-button:hover:not(:disabled) {
+  border-color: var(--obr-text-secondary);
+  background: var(--obr-control-hover);
 }
 
 .duality-button:disabled {
@@ -47,7 +43,7 @@ const emit = defineEmits<{ roll: [] }>();
 
 .duality-button__dice {
   display: flex;
-  margin-top: -3px;
+  gap: 7px;
 }
 
 .duality-button__die {
@@ -55,40 +51,34 @@ const emit = defineEmits<{ roll: [] }>();
   width: 36px;
   height: 36px;
   place-items: center;
-  border-radius: 50%;
-}
-
-.duality-button__die + .duality-button__die {
-  margin-left: -10px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
 }
 
 .duality-button__die--hope {
-  background: #e8c547;
-  color: #241f14;
+  color: var(--hope);
 }
 
 .duality-button__die--fear {
-  background: #7b2fbe;
-  color: #fff;
+  color: var(--fear);
 }
 
 .duality-button__text {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   text-align: left;
-  text-transform: uppercase;
 }
 
 .duality-button__text strong {
-  color: #fff7c7;
+  color: var(--obr-text);
   font-size: 16px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
 }
 
 .duality-button__text small {
-  color: #dbd0e5;
+  color: var(--obr-text-secondary);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
 }
 </style>

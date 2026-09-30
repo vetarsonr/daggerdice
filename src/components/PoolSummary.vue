@@ -2,11 +2,14 @@
   <section class="pool-summary" aria-label="Pool di dadi">
     <div class="pool-summary__row">
       <span class="pool-summary__label">Pool</span>
-      <button v-if="hasDice" class="pool-summary__clear" type="button" title="Svuota pool" aria-label="Svuota pool" @click="emit('clear')">×</button>
+      <button v-if="hasDice" class="pool-summary__clear" type="button" title="Svuota pool" aria-label="Svuota pool" @click="emit('clear')">
+        <UiIcon name="close" />
+      </button>
     </div>
     <p class="pool-summary__notation">{{ formatPool(pool, modifier) }}</p>
     <button class="pool-summary__roll" :disabled="!hasDice || disabled" type="button" @click="emit('roll')">
-      🎲 {{ disabled ? "Tiro in corso…" : "Tira" }}
+      <DieIcon type="d20" />
+      <span>{{ disabled ? "Tiro in corso…" : "Tira" }}</span>
     </button>
   </section>
 </template>
@@ -15,6 +18,8 @@
 import { computed } from "vue";
 import { formatPool } from "../dice/format";
 import { poolDieCount, type DicePool } from "../dice/types";
+import DieIcon from "./DieIcon.vue";
+import UiIcon from "./UiIcon.vue";
 
 const props = defineProps<{
   pool: DicePool;
@@ -27,10 +32,10 @@ const hasDice = computed(() => poolDieCount(props.pool) > 0);
 
 <style scoped>
 .pool-summary {
-  padding: 10px;
-  border: 1px solid rgb(255 255 255 / 9%);
-  border-radius: 10px;
-  background: #201a29;
+  padding: 12px;
+  border: 1px solid var(--obr-divider);
+  border-radius: 6px;
+  background: var(--obr-paper);
 }
 
 .pool-summary__row {
@@ -39,7 +44,7 @@ const hasDice = computed(() => poolDieCount(props.pool) > 0);
 }
 
 .pool-summary__label {
-  color: #a99fb9;
+  color: var(--obr-text-secondary);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -47,21 +52,22 @@ const hasDice = computed(() => poolDieCount(props.pool) > 0);
 }
 
 .pool-summary__clear {
-  width: 21px;
-  height: 21px;
-  border: 0;
-  border-radius: 50%;
-  background: #3c3446;
-  color: #e8deef;
-  font-size: 18px;
-  line-height: 1;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid var(--obr-divider);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--obr-text-secondary);
+  font-size: 15px;
 }
 
 .pool-summary__notation {
   min-height: 18px;
-  margin: 4px 0 9px;
+  margin: 4px 0 12px;
   overflow: hidden;
-  color: #f5eef9;
+  color: var(--obr-text);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
   font-weight: 700;
@@ -70,24 +76,30 @@ const hasDice = computed(() => poolDieCount(props.pool) > 0);
 }
 
 .pool-summary__roll {
+  display: flex;
   width: 100%;
-  min-height: 35px;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   border: 0;
-  border-radius: 8px;
-  background: #7b2fbe;
-  color: #fff;
+  border-radius: 6px;
+  background: var(--obr-text);
+  color: var(--obr-paper);
   font-weight: 800;
 }
 
-.pool-summary__roll:hover:not(:disabled),
-.pool-summary__roll:focus-visible:not(:disabled) {
-  background: #9246d1;
-  outline: 2px solid #c896f3;
-  outline-offset: 2px;
+.pool-summary__roll:hover:not(:disabled) {
+  background: var(--obr-text-secondary);
 }
 
 .pool-summary__roll:disabled {
-  background: #3a3442;
-  color: #82798d;
+  background: var(--obr-control);
+  color: var(--obr-text-disabled);
+}
+
+.pool-summary__roll :deep(.die-icon) {
+  width: 18px;
+  height: 18px;
 }
 </style>

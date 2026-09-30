@@ -17,7 +17,7 @@ Apri una stanza, attiva **Daggerheart Dice** dall'elenco delle estensioni e usa 
 - **Dualità** tira immediatamente i due d12 Speranza e Paura. Vantaggio aggiunge un d6, Svantaggio lo sottrae.
 - La barra a sinistra aggiunge dadi al pool. Usa clic destro o pressione lunga per rimuoverne uno.
 - Vantaggio e Svantaggio nel pool sono disponibili soltanto con un singolo d20; in quel caso vengono mostrati due d20 e quello scartato resta visibile nella card.
-- Il modificatore resta impostato tra un tiro e l'altro. Puoi usare i pulsanti, cliccare il valore per scriverlo o usare `↺` per azzerarlo.
+- Il modificatore resta impostato tra un tiro e l'altro. Puoi usare i pulsanti, cliccare il valore per scriverlo o usare l'icona di reset per azzerarlo.
 - **Tutti** invia e conserva il tiro nello storico condiviso della stanza. **Solo io** lo mostra e lo salva soltanto sul client che ha tirato.
 - `Invio` tira il pool e `D` esegue una Dualità, quando il focus non è in un campo di testo.
 

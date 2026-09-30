@@ -37,38 +37,35 @@ const emit = defineEmits<{ "update:modelValue": [value: string] }>();
   display: grid;
   grid-auto-columns: 1fr;
   grid-auto-flow: column;
-  gap: 3px;
-  padding: 3px;
-  border: 1px solid rgb(255 255 255 / 10%);
-  border-radius: 10px;
-  background: #211b2a;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--obr-divider);
+  border-radius: 6px;
+  background: var(--obr-paper);
 }
 
 .segmented-control__option {
   min-width: 0;
   padding: 7px 4px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 4px;
   background: transparent;
-  color: #c8c0d5;
+  color: var(--obr-text-secondary);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
 }
 
-.segmented-control__option:hover:not(:disabled),
-.segmented-control__option:focus-visible:not(:disabled) {
-  color: #fff;
-  outline: none;
+.segmented-control__option:hover:not(:disabled) {
+  color: var(--obr-text);
 }
 
 .segmented-control__option--active {
-  background: #49335d;
-  color: #fff;
-  box-shadow: 0 1px 5px rgb(0 0 0 / 24%);
+  background: var(--obr-selected);
+  color: var(--obr-text);
 }
 
 .segmented-control__option:disabled {
-  color: #6c6478;
+  color: var(--obr-text-disabled);
 }
 </style>

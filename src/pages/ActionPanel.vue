@@ -1,5 +1,5 @@
 <template>
-  <main class="action-panel">
+  <main class="action-panel" :style="themeStyle">
     <DiceBar :pool="pool" @add="addDie" @remove="removeDie" />
     <section class="action-panel__content">
       <header class="action-panel__header">
@@ -49,12 +49,14 @@ import PoolSummary from "../components/PoolSummary.vue";
 import SegmentedControl, { type SegmentOption } from "../components/SegmentedControl.vue";
 import SettingsMenu from "../components/SettingsMenu.vue";
 import { useHistory } from "../composables/useHistory";
+import { useObrTheme } from "../composables/useObrTheme";
 import { useRoller } from "../composables/useRoller";
 import { useSettings } from "../composables/useSettings";
 import { createEmptyPool, isD20ModeAllowed, poolDieCount, type DicePool, type DieType, type RollEvent } from "../dice/types";
 import { isObrAvailable } from "../obr/client";
 
 const { settings, setModifier, resetModifier } = useSettings();
+const { themeStyle, loadTheme } = useObrTheme();
 const history = useHistory();
 const roller = useRoller(settings, history);
 const StandalonePlayback = defineAsyncComponent(() => import("../components/StandalonePlayback.vue"));
@@ -118,6 +120,7 @@ watch(
 );
 
 onMounted(() => {
+  void loadTheme();
   void Promise.all([history.load(), roller.loadPlayer()]);
   window.addEventListener("keydown", onKeyboard);
 });
@@ -132,7 +135,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeyboard));
   height: 100vh;
   min-height: 480px;
   overflow: hidden;
-  background: radial-gradient(circle at 90% 0%, #2d2040 0, #171321 49%);
+  background: var(--obr-background);
 }
 
 .action-panel__content {
@@ -140,7 +143,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeyboard));
   min-width: 0;
   flex: 1;
   align-content: start;
-  gap: 11px;
+  gap: 12px;
   overflow-y: auto;
   padding: 12px;
 }
@@ -163,9 +166,9 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeyboard));
 
 .action-panel__dev {
   padding: 3px 5px;
-  border: 1px solid rgb(232 197 71 / 30%);
-  border-radius: 5px;
-  color: #e8c547;
+  border: 1px solid var(--obr-divider);
+  border-radius: 4px;
+  color: var(--obr-text-secondary);
   font-size: 9px;
   font-weight: 800;
   text-transform: uppercase;
@@ -173,16 +176,17 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeyboard));
 
 .action-panel__mode-help {
   margin: -4px 0 -2px;
-  color: #94899f;
+  color: var(--obr-text-secondary);
   font-size: 10px;
 }
 
 .action-panel__error {
   margin: -3px 0 0;
   padding: 7px 8px;
-  border-radius: 7px;
-  background: rgb(231 122 122 / 15%);
-  color: #f4b2b2;
+  border: 1px solid var(--obr-divider);
+  border-radius: 6px;
+  background: var(--obr-control);
+  color: var(--obr-text-secondary);
   font-size: 11px;
 }
 </style>

@@ -62,13 +62,13 @@ onBeforeUnmount(() => unsubscribe?.());
   position: fixed;
   z-index: 10;
   inset: 0;
-  background: rgb(15 11 22 / 70%);
+  background: rgb(0 0 0 / 32%);
 }
 
 .standalone-playback__card {
   position: absolute;
-  right: 14px;
-  bottom: 14px;
-  width: min(390px, calc(100vw - 28px));
+  right: 16px;
+  bottom: 16px;
+  width: min(390px, calc(100vw - 32px));
 }
 </style>

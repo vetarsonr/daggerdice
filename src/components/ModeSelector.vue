@@ -36,11 +36,11 @@ const options = computed<SegmentOption[]>(() => {
 <style scoped>
 .mode-selector {
   display: grid;
-  gap: 5px;
+  gap: 6px;
 }
 
 .mode-selector__label {
-  color: #a99fb9;
+  color: var(--obr-text-secondary);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.08em;

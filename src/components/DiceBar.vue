@@ -75,43 +75,40 @@ onBeforeUnmount(cancelLongPress);
 <style scoped>
 .dice-bar {
   display: flex;
-  width: 68px;
-  flex: 0 0 68px;
+  width: 64px;
+  flex: 0 0 64px;
   flex-direction: column;
-  gap: 7px;
-  padding: 10px 8px;
-  border-right: 1px solid rgb(255 255 255 / 8%);
-  background: #120f19;
+  gap: 8px;
+  padding: 8px;
+  border-right: 1px solid var(--obr-divider);
+  background: var(--obr-paper);
 }
 
 .dice-bar__button {
   position: relative;
   display: grid;
-  min-height: 48px;
+  min-height: 46px;
   place-items: center;
-  border: 1px solid rgb(255 255 255 / 13%);
+  border: 1px solid var(--obr-divider);
   border-radius: 50%;
-  background: #282131;
-  color: #f7f3ff;
-  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+  background: var(--obr-control);
+  color: var(--obr-text);
 }
 
-.dice-bar__button:hover,
-.dice-bar__button:focus-visible {
-  border-color: #b67de6;
-  box-shadow: 0 0 16px rgb(156 84 214 / 47%);
-  outline: none;
-  transform: translateY(-1px);
+.dice-bar__button:hover:not(:disabled) {
+  border-color: var(--obr-text-secondary);
+  background: var(--obr-control-hover);
 }
 
 .dice-bar__button--selected {
-  border-color: #e8c547;
-  box-shadow: inset 0 0 0 1px rgb(232 197 71 / 24%), 0 0 12px rgb(232 197 71 / 20%);
+  border-color: var(--obr-text);
+  background: var(--obr-selected);
 }
 
 .dice-bar__label {
   position: absolute;
   bottom: 2px;
+  color: var(--obr-text-secondary);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -125,10 +122,10 @@ onBeforeUnmount(cancelLongPress);
   min-width: 17px;
   height: 17px;
   place-items: center;
-  border: 2px solid #120f19;
+  border: 2px solid var(--obr-paper);
   border-radius: 999px;
-  background: #e8c547;
-  color: #171321;
+  background: var(--obr-text);
+  color: var(--obr-paper);
   font-size: 10px;
   font-weight: 900;
 }

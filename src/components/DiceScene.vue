@@ -2,7 +2,11 @@
   <div class="dice-scene" aria-label="Animazione dei dadi">
     <div ref="canvasHost" class="dice-scene__canvas"></div>
     <div v-if="fallback" class="dice-scene__fallback" aria-live="polite">
-      <span v-for="(die, index) in dice" :key="`${die.type}-${index}`" :style="{ '--die-color': die.color }">
+      <span
+        v-for="(die, index) in dice"
+        :key="`${die.type}-${index}`"
+        :style="{ '--die-color': fallbackColor(die), '--die-text': fallbackTextColor(die) }"
+      >
         {{ displayDieValue(die) }}
       </span>
     </div>
@@ -37,6 +41,14 @@ function playWhenSized(attempts = 0): void {
     return;
   }
   play();
+}
+
+function fallbackColor(die: RolledDie): string {
+  return die.role === "hope" || die.role === "fear" ? die.color : "var(--obr-text-secondary)";
+}
+
+function fallbackTextColor(die: RolledDie): string {
+  return die.role === "hope" ? "#15111d" : "var(--obr-paper)";
 }
 
 onMounted(async () => {
@@ -109,12 +121,11 @@ onBeforeUnmount(() => {
   width: 72px;
   height: 72px;
   place-items: center;
-  border: 2px solid color-mix(in srgb, var(--die-color), white 28%);
-  border-radius: 18px;
+  border: 1px solid var(--obr-divider);
+  border-radius: 6px;
   background: var(--die-color);
-  color: #fff;
+  color: var(--die-text);
   font-size: 28px;
   font-weight: 800;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 35%);
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <svg class="die-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <svg class="die-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
     <template v-if="type === 'd4'">
       <path d="m24 5 17 34H7L24 5Z" />
       <path d="m24 5-7 34m7-34 7 34M7 39h34" />
@@ -47,6 +47,6 @@ defineProps<{ type: DieType }>();
 .die-icon {
   width: 30px;
   height: 30px;
-  stroke-width: 1.65;
+  stroke-width: 1.55;
 }
 </style>

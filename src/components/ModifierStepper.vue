@@ -26,7 +26,9 @@
         @keyup.escape="cancel"
       />
       <button type="button" aria-label="Aumenta modificatore" @click="emit('update:modelValue', clamp(modelValue + 1))">+</button>
-      <button class="modifier-stepper__reset" type="button" title="Reimposta modificatore" aria-label="Reimposta modificatore" @click="emit('reset')">↺</button>
+      <button class="modifier-stepper__reset" type="button" title="Reimposta modificatore" aria-label="Reimposta modificatore" @click="emit('reset')">
+        <UiIcon name="reset" />
+      </button>
     </div>
   </div>
 </template>
@@ -34,6 +36,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref } from "vue";
 import { formatModifier } from "../dice/format";
+import UiIcon from "./UiIcon.vue";
 
 const props = defineProps<{ modelValue: number }>();
 const emit = defineEmits<{
@@ -87,11 +90,11 @@ onBeforeUnmount(() => {
 <style scoped>
 .modifier-stepper {
   display: grid;
-  gap: 5px;
+  gap: 6px;
 }
 
 .modifier-stepper__label {
-  color: #a99fb9;
+  color: var(--obr-text-secondary);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -101,20 +104,22 @@ onBeforeUnmount(() => {
 .modifier-stepper__controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .modifier-stepper button,
 .modifier-stepper__input {
-  height: 31px;
-  border: 1px solid rgb(255 255 255 / 11%);
-  border-radius: 7px;
-  background: #282131;
-  color: #f6f1fc;
+  height: 32px;
+  border: 1px solid var(--obr-divider);
+  border-radius: 6px;
+  background: var(--obr-control);
+  color: var(--obr-text);
 }
 
 .modifier-stepper button:not(.modifier-stepper__value) {
-  width: 31px;
+  display: grid;
+  width: 32px;
+  place-items: center;
   font-size: 18px;
   line-height: 1;
 }
@@ -128,12 +133,16 @@ onBeforeUnmount(() => {
 
 .modifier-stepper__input {
   padding: 0 4px;
-  outline-color: #b67de6;
+}
+
+.modifier-stepper__input:focus {
+  border-color: var(--obr-text-secondary);
+  outline: none;
 }
 
 .modifier-stepper__reset {
   margin-left: auto;
-  color: #c9bdd7;
-  font-size: 15px !important;
+  color: var(--obr-text-secondary) !important;
+  font-size: 16px !important;
 }
 </style>

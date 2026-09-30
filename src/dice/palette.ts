@@ -3,24 +3,24 @@ import { secureRandomInt } from "./rng";
 
 export const HOPE_COLOR = "#E8C547";
 export const FEAR_COLOR = "#7B2FBE";
-export const ADVANTAGE_COLOR = "#79C99E";
-export const DISADVANTAGE_COLOR = "#E77A7A";
+export const ADVANTAGE_COLOR = "#748078";
+export const DISADVANTAGE_COLOR = "#876F71";
 export const DROPPED_COLOR = "#667085";
 
-/** Saturated colours kept apart from Daggerheart's yellow and purple identities. */
+/** Muted dice colours preserve contrast while keeping Duality's yellow and purple prominent. */
 export const DIE_PALETTE = [
-  "#E76F51",
-  "#F08A4B",
-  "#2A9D8F",
-  "#277DA1",
-  "#4D96FF",
-  "#43AA8B",
-  "#90BE6D",
-  "#F94144",
-  "#D1495B",
-  "#3A86FF",
-  "#00B4D8",
-  "#F3722C",
+  "#667085",
+  "#6D7785",
+  "#747F8D",
+  "#5F6B7A",
+  "#798390",
+  "#68737F",
+  "#707A86",
+  "#596574",
+  "#7D8790",
+  "#626D78",
+  "#727C88",
+  "#5B6673",
 ] as const;
 
 export function pickDieColor(random: RandomInt = secureRandomInt): string {
