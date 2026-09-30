@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "manifest_version": 1,
   "author": "DaggerDice IT",
-  "description": "Tiri di dadi 3D per Daggerheart pronto all'uso, senza account esterni.",
+  "description": "Lanciadadi 3D per Daggerheart pronto all'uso, senza account esterni.",
   "icon": "/icon.svg",
   "background_url": "/background.html",
   "action": {
