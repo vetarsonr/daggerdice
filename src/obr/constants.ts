@@ -1,4 +1,5 @@
 export const ROLL_CHANNEL = "it.daggerdice/roll";
+export const FEAR_ROLL_CHANNEL = "it.daggerapp.owlbear/daggerdice-fear-roll";
 export const ANIMATION_COMPLETE_CHANNEL = "it.daggerdice/animation-complete";
 export const ROLL_REQUEST_CHANNEL = "it.daggerdice/request";
 export const ROLL_RESULT_CHANNEL = "it.daggerdice/result";

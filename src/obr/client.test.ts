@@ -25,7 +25,9 @@ import {
   reportRollAnimationComplete,
   sendExternalPong,
   sendExternalRollResult,
+  sendFearRoll,
   sendRoll,
+  subscribeToRolls,
   subscribeToExternalPings,
   subscribeToExternalRollRequests,
   waitForRollAnimation,
@@ -67,6 +69,45 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
+});
+
+describe("Companion GM fear roll notifications", () => {
+  it("notifies all clients with only the version and roll ID after a private roll", async () => {
+    const fearRoll = { ...roll, visibility: "private" as const, outcome: "fear" as const };
+    await sendRoll(fearRoll);
+    await sendFearRoll(fearRoll.id);
+
+    expect(mocks.sdk.broadcast.sendMessage.mock.calls).toEqual([
+      ["it.daggerdice/roll", fearRoll, { destination: "LOCAL" }],
+      ["it.daggerapp.owlbear/daggerdice-fear-roll", { v: 1, rollId: fearRoll.id }, { destination: "ALL" }],
+    ]);
+  });
+
+  it.each(["", "   "])("does not broadcast an empty roll ID (%j)", async (rollId) => {
+    await sendFearRoll(rollId);
+
+    expect(mocks.sdk.broadcast.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("does not broadcast outside Owlbear", async () => {
+    mocks.sdk.isAvailable = false;
+
+    await sendFearRoll(roll.id);
+
+    expect(mocks.sdk.broadcast.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("does not emit another notification when receiving a fear roll", () => {
+    const callback = vi.fn();
+    subscribeToRolls(callback);
+    const receive = mocks.sdk.broadcast.onMessage.mock.calls[0]?.[1] as (event: { data: unknown }) => void;
+    const fearRoll = { ...roll, outcome: "fear" as const };
+
+    receive({ data: fearRoll });
+
+    expect(callback).toHaveBeenCalledWith(fearRoll);
+    expect(mocks.sdk.broadcast.sendMessage).not.toHaveBeenCalled();
+  });
 });
 
 describe("3D roll overlay", () => {

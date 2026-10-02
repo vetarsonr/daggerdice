@@ -7,6 +7,7 @@ import {
   DEV_ANIMATION_COMPLETE_EVENT,
   DEV_BROADCAST_CHANNEL,
   DEV_ROLL_EVENT,
+  FEAR_ROLL_CHANNEL,
   OVERLAY_MODAL_ID,
   PING_CHANNEL,
   PONG_CHANNEL,
@@ -57,6 +58,14 @@ export async function sendRoll(event: RollEvent): Promise<void> {
   await OBR.broadcast.sendMessage(ROLL_CHANNEL, event, {
     destination: event.visibility === "private" ? "LOCAL" : "ALL",
   });
+}
+
+/** Notifies the Companion GM so it can update Fear using its own API token. */
+export async function sendFearRoll(rollId: string): Promise<void> {
+  if (!isObrAvailable() || !rollId.trim()) return;
+
+  await waitForObr();
+  await OBR.broadcast.sendMessage(FEAR_ROLL_CHANNEL, { v: 1, rollId }, { destination: "ALL" });
 }
 
 export function subscribeToRolls(callback: (event: RollEvent) => void): () => void {

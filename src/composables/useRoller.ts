@@ -1,7 +1,7 @@
 import { reactive, ref } from "vue";
 import { rollDuality, rollPool } from "../dice/roller";
 import type { DicePool, RollEvent, RollerPlayer } from "../dice/types";
-import { getCurrentPlayer, sendRoll } from "../obr/client";
+import { getCurrentPlayer, sendFearRoll, sendRoll } from "../obr/client";
 import type { DiceSettings } from "./useSettings";
 
 interface HistoryWriter {
@@ -29,6 +29,9 @@ export function useRoller(settings: DiceSettings, history: HistoryWriter) {
     try {
       try {
         await sendRoll(event);
+        if (event.kind === "duality" && event.outcome === "fear") {
+          await sendFearRoll(event.id).catch(() => undefined);
+        }
       } catch {
         error.value = "Il tiro non è stato inviato. Riprova.";
         return;
