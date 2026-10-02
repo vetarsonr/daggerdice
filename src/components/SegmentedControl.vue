@@ -6,6 +6,7 @@
       class="segmented-control__option"
       :class="{ 'segmented-control__option--active': option.value === modelValue }"
       :disabled="option.disabled"
+      :aria-pressed="option.value === modelValue"
       :title="option.hint"
       type="button"
       @click="emit('update:modelValue', option.value)"

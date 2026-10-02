@@ -22,7 +22,7 @@
         max="20"
         aria-label="Modificatore"
         @blur="commit"
-        @keyup.enter="commit"
+        @keydown.enter="commit"
         @keyup.escape="cancel"
       />
       <button type="button" aria-label="Aumenta modificatore" @click="emit('update:modelValue', clamp(modelValue + 1))">+</button>

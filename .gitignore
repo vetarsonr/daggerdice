@@ -1,7 +1,8 @@
 node_modules/
 dist/
 .idea/
-docs/
+docs/*
+!docs/api.md
 .DS_Store
 .env
 .env.*

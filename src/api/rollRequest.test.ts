@@ -50,7 +50,7 @@ describe("external roll request validation", () => {
     expect(requestDiceToPool(request?.dice ?? [])).toEqual({ d20: 1, d6: 2, d100: 1 });
   });
 
-  it("creates a Dualità roll with Hope, Fear, and optional card metadata", () => {
+  it("immediately creates a Duality action with Hope, Fear, and optional card metadata", () => {
     const request = parseExternalRollRequest({
       ...validRequest,
       kind: "duality",
@@ -61,6 +61,7 @@ describe("external roll request validation", () => {
 
     expect(roll).toMatchObject({
       kind: "duality",
+      rollType: "action",
       label: "Attacco",
       actorName: "Alyra",
       mode: "advantage",

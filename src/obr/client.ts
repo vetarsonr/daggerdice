@@ -7,7 +7,7 @@ import {
   DEV_ANIMATION_COMPLETE_EVENT,
   DEV_BROADCAST_CHANNEL,
   DEV_ROLL_EVENT,
-  FEAR_ROLL_CHANNEL,
+  FEAR_GAINED_CHANNEL,
   OVERLAY_MODAL_ID,
   PING_CHANNEL,
   PONG_CHANNEL,
@@ -60,12 +60,25 @@ export async function sendRoll(event: RollEvent): Promise<void> {
   });
 }
 
-/** Notifies the Companion GM so it can update Fear using its own API token. */
-export async function sendFearRoll(rollId: string): Promise<void> {
-  if (!isObrAvailable() || !rollId.trim()) return;
+/** Notifies the Companion without disclosing dice values, including for private rolls. */
+export async function sendFearGained(event: RollEvent): Promise<void> {
+  if (
+    !isObrAvailable() ||
+    !event.id.trim() ||
+    event.kind !== "duality" ||
+    (event.rollType ?? "action") !== "action" ||
+    event.playerRole !== "PLAYER" ||
+    event.outcome !== "fear"
+  ) {
+    return;
+  }
 
   await waitForObr();
-  await OBR.broadcast.sendMessage(FEAR_ROLL_CHANNEL, { v: 1, rollId }, { destination: "ALL" });
+  await OBR.broadcast.sendMessage(
+    FEAR_GAINED_CHANNEL,
+    { v: 1, rollId: event.id, amount: 1, playerName: event.playerName },
+    { destination: "ALL" },
+  );
 }
 
 export function subscribeToRolls(callback: (event: RollEvent) => void): () => void {
@@ -241,12 +254,17 @@ export async function openResultCard(event: RollEvent): Promise<void> {
   if (!isObrAvailable()) return;
 
   const { width, height } = await viewportSize();
+  const cardWidth = Math.max(1, Math.min(400, width - 40));
+  // Allow room for wrapped die labels; long results can scroll within the viewport.
+  const dicePerLine = Math.max(1, Math.floor((cardWidth - 90) / 90));
+  const extraLines = Math.max(0, Math.ceil(event.dice.length / dicePerLine) - 1);
+  const cardHeight = Math.max(1, Math.min(188 + extraLines * 22, height - 40));
   await OBR.popover.close(RESULT_POPOVER_ID).catch(() => undefined);
   await OBR.popover.open({
     id: RESULT_POPOVER_ID,
     url: rollUrl("result.html", event),
-    width: Math.min(400, Math.max(300, width - 32)),
-    height: 188,
+    width: cardWidth,
+    height: cardHeight,
     anchorReference: "POSITION",
     anchorPosition: { left: width - 20, top: height - 20 },
     anchorOrigin: { horizontal: "RIGHT", vertical: "BOTTOM" },

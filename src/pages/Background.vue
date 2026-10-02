@@ -15,7 +15,7 @@ import {
   prefersReducedMotion,
   sendExternalPong,
   sendExternalRollResult,
-  sendFearRoll,
+  sendFearGained,
   sendRoll,
   subscribeToExternalPings,
   subscribeToExternalRollRequests,
@@ -86,9 +86,7 @@ async function handleExternalRollRequest(payload: unknown, player: RollerPlayer)
 
   try {
     await sendRoll(roll);
-    if (roll.kind === "duality" && roll.outcome === "fear") {
-      await sendFearRoll(roll.id).catch(() => undefined);
-    }
+    await sendFearGained(roll).catch(() => undefined);
   } catch {
     return;
   }

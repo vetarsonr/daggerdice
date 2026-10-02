@@ -33,7 +33,10 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .result-page {
+  max-height: 100dvh;
   padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .result-page--empty {

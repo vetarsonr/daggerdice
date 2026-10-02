@@ -20,6 +20,7 @@ export interface RolledDie {
 }
 
 export type RollKind = "duality" | "pool";
+export type RollType = "action" | "reaction";
 export type RollMode = "normal" | "advantage" | "disadvantage";
 export type RollOutcome = "hope" | "fear" | "critical";
 export type RollVisibility = "all" | "private" | "gm";
@@ -27,6 +28,8 @@ export type RollVisibility = "all" | "private" | "gm";
 export interface RollEvent {
   id: string;
   kind: RollKind;
+  /** Duality type. Missing on legacy events, which are treated as actions. */
+  rollType?: RollType;
   playerId: string;
   playerName: string;
   /** Optional external-roll title displayed in place of the default roll title. */
@@ -38,6 +41,8 @@ export interface RollEvent {
   mode: RollMode;
   modifier: number;
   dice: RolledDie[];
+  /** Additional Duality dice, also included in dice for animation. */
+  extras?: RolledDie[];
   total: number;
   outcome?: RollOutcome;
   timestamp: number;
@@ -69,7 +74,10 @@ export interface RollBaseOptions {
   modifier: number;
 }
 
-export interface DualityRollOptions extends RollBaseOptions {}
+export interface DualityRollOptions extends RollBaseOptions {
+  rollType?: RollType;
+  extras?: DicePool;
+}
 
 export interface PoolRollOptions extends RollBaseOptions {
   pool: DicePool;
@@ -99,4 +107,8 @@ export function getPoolCount(pool: DicePool, type: DieType): number {
 
 export function isD20ModeAllowed(pool: DicePool): boolean {
   return getPoolCount(pool, "d20") === 1 && poolDieCount(pool) === 1;
+}
+
+export function isPoolModeAllowed(pool: DicePool, duality?: RollType): boolean {
+  return duality !== undefined || isD20ModeAllowed(pool);
 }

@@ -1,7 +1,7 @@
 import { reactive, ref } from "vue";
 import { rollDuality, rollPool } from "../dice/roller";
-import type { DicePool, RollEvent, RollerPlayer } from "../dice/types";
-import { getCurrentPlayer, sendFearRoll, sendRoll } from "../obr/client";
+import type { DicePool, RollEvent, RollerPlayer, RollType } from "../dice/types";
+import { getCurrentPlayer, sendFearGained, sendRoll } from "../obr/client";
 import type { DiceSettings } from "./useSettings";
 
 interface HistoryWriter {
@@ -29,9 +29,8 @@ export function useRoller(settings: DiceSettings, history: HistoryWriter) {
     try {
       try {
         await sendRoll(event);
-        if (event.kind === "duality" && event.outcome === "fear") {
-          await sendFearRoll(event.id).catch(() => undefined);
-        }
+        settings.mode = "normal";
+        await sendFearGained(event).catch(() => undefined);
       } catch {
         error.value = "Il tiro non è stato inviato. Riprova.";
         return;
@@ -47,7 +46,7 @@ export function useRoller(settings: DiceSettings, history: HistoryWriter) {
     }
   }
 
-  async function rollDualityNow(): Promise<void> {
+  async function rollDualityNow(rollType: RollType = "action"): Promise<void> {
     if (isRolling.value) return;
     await dispatch(
       rollDuality({
@@ -55,20 +54,23 @@ export function useRoller(settings: DiceSettings, history: HistoryWriter) {
         visibility: settings.visibility,
         mode: settings.mode,
         modifier: settings.modifier,
+        rollType,
       }),
     );
   }
 
-  async function rollPoolNow(pool: DicePool): Promise<void> {
+  async function rollPoolNow(pool: DicePool, rollType?: RollType): Promise<void> {
     if (isRolling.value) return;
+    const options = {
+      player,
+      visibility: settings.visibility,
+      mode: settings.mode,
+      modifier: settings.modifier,
+    };
     await dispatch(
-      rollPool({
-        player,
-        visibility: settings.visibility,
-        mode: settings.mode,
-        modifier: settings.modifier,
-        pool,
-      }),
+      rollType
+        ? rollDuality({ ...options, rollType, extras: pool })
+        : rollPool({ ...options, pool }),
     );
   }
 

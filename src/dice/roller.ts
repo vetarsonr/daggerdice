@@ -13,6 +13,7 @@ import {
   isD20ModeAllowed,
   type DieRole,
   type DieType,
+  type DicePool,
   type DualityRollOptions,
   type PoolRollOptions,
   type RolledDie,
@@ -74,6 +75,21 @@ function rollD100(color: string, random: RandomInt): RolledDie[] {
   ];
 }
 
+function rollNormalPool(pool: DicePool, random: RandomInt, pickColor: () => string): RolledDie[] {
+  const dice: RolledDie[] = [];
+  for (const type of DIE_TYPES) {
+    const count = getPoolCount(pool, type);
+    for (let index = 0; index < count; index += 1) {
+      if (type === "d100") {
+        dice.push(...rollD100(pickColor(), random));
+      } else {
+        dice.push(roll(type, "normal", pickColor(), random));
+      }
+    }
+  }
+  return dice;
+}
+
 export function rollDuality(
   options: DualityRollOptions,
   overrides: RollerDependencies = {},
@@ -97,10 +113,15 @@ export function rollDuality(
   }
 
   const outcome = hope.value === fear.value ? "critical" : hope.value > fear.value ? "hope" : "fear";
+  const extras = rollNormalPool(options.extras ?? {}, deps.random, deps.pickColor);
+  dice.push(...extras);
+  total += totalOfPoolDice(extras);
 
   return {
     ...baseEvent(options, "duality", deps.createId(), deps.now()),
+    rollType: options.rollType ?? "action",
     dice,
+    extras,
     total,
     outcome,
   };
@@ -158,16 +179,7 @@ export function rollPool(options: PoolRollOptions, overrides: RollerDependencies
   if (acceptedMode !== "normal") {
     dice.push(...rollD20WithMode(acceptedMode, deps.random, deps.pickColor));
   } else {
-    for (const type of DIE_TYPES) {
-      const count = getPoolCount(options.pool, type);
-      for (let index = 0; index < count; index += 1) {
-        if (type === "d100") {
-          dice.push(...rollD100(deps.pickColor(), deps.random));
-        } else {
-          dice.push(roll(type, "normal", deps.pickColor(), deps.random));
-        }
-      }
-    }
+    dice.push(...rollNormalPool(options.pool, deps.random, deps.pickColor));
   }
 
   return {
@@ -205,6 +217,11 @@ export function isRollEvent(value: unknown): value is RollEvent {
   return (
     typeof event.id === "string" &&
     (event.kind === "duality" || event.kind === "pool") &&
+    (event.kind === "duality"
+      ? (event.rollType === undefined || event.rollType === "action" || event.rollType === "reaction") &&
+        (event.extras === undefined ||
+          (Array.isArray(event.extras) && event.extras.every((die) => isRolledDie(die) && die.role === "normal")))
+      : event.rollType === undefined && event.extras === undefined) &&
     typeof event.playerId === "string" &&
     typeof event.playerName === "string" &&
     (event.label === undefined || typeof event.label === "string") &&

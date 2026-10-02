@@ -2,7 +2,7 @@
   <article
     class="roll-card"
     :class="[
-      `roll-card--${roll.outcome ?? 'pool'}`,
+      `roll-card--${reaction ? 'reaction' : roll.outcome ?? 'pool'}`,
       { 'roll-card--compact': compact, 'roll-card--clickable': !compact },
     ]"
     :aria-label="`${title}, totale ${roll.total}`"
@@ -18,10 +18,11 @@
       <div class="roll-card__content">
         <p class="roll-card__player">
           {{ actorName }}
+          <span v-if="reaction" class="roll-card__badge roll-card__badge--reaction">REAZIONE</span>
           <span v-if="roll.playerRole === 'GM'" class="roll-card__badge">GM</span>
           <span v-if="roll.visibility !== 'all'" class="roll-card__badge roll-card__badge--private">{{ visibilityLabel }}</span>
         </p>
-        <p v-if="!compact" class="roll-card__detail">
+        <p class="roll-card__detail">
           <template v-for="(die, index) in roll.dice" :key="`${die.type}-${index}`">
             <span v-if="index > 0" class="roll-card__operator">{{ die.role === 'disadvantage' ? '−' : '+' }}</span>
             <span
@@ -29,15 +30,20 @@
               :class="[`roll-card__die--${die.role}`, { 'roll-card__die--dropped': die.role === 'dropped' }]"
               :style="die.role === 'hope' || die.role === 'fear' ? { '--die-color': die.color } : undefined"
             >
-              [{{ displayDieValue(die) }}]<small>{{ roleLabel(die) }}</small>
+              [{{ displayDieValue(die) }}] <small>{{ dieRoleLabel(die) }}</small>
             </span>
           </template>
           <template v-if="roll.modifier !== 0">
             <span class="roll-card__operator">{{ roll.modifier < 0 ? '−' : '+' }}</span>
-            <span class="roll-card__modifier">{{ Math.abs(roll.modifier) }}</span>
+            <span class="roll-card__modifier">{{ Math.abs(roll.modifier) }} <small>Modificatore</small></span>
           </template>
         </p>
-        <p class="roll-card__formula">{{ formatRollFormula(roll) }}</p>
+        <p v-if="!compact" class="roll-card__formula">
+          {{ formatRollFormula(roll) }}<span v-if="reaction"> · nessuna Speranza o Paura</span>
+        </p>
+        <span v-if="!compact && resourceLabel" class="roll-card__resource" :class="`roll-card__resource--${roll.outcome}`">
+          {{ resourceLabel }}
+        </span>
       </div>
       <strong class="roll-card__total">{{ roll.total }}</strong>
     </div>
@@ -46,29 +52,25 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { displayDieValue, formatRollFormula, outcomeLabel, relativeTime } from "../dice/format";
-import type { RolledDie, RollEvent } from "../dice/types";
+import {
+  dieRoleLabel,
+  displayDieValue,
+  formatRollFormula,
+  formatRollTitle,
+  isReactionRoll,
+  relativeTime,
+  rollResourceLabel,
+} from "../dice/format";
+import type { RollEvent } from "../dice/types";
 
 const props = withDefaults(defineProps<{ roll: RollEvent; compact?: boolean }>(), { compact: false });
 const emit = defineEmits<{ close: [] }>();
 
-const defaultTitle = computed(() =>
-  props.roll.kind === "duality" ? `Dualità: ${outcomeLabel(props.roll.outcome)}` : "Tiro libero",
-);
-const title = computed(() => props.roll.label ?? defaultTitle.value);
+const title = computed(() => formatRollTitle(props.roll));
+const reaction = computed(() => isReactionRoll(props.roll));
+const resourceLabel = computed(() => rollResourceLabel(props.roll));
 const actorName = computed(() => props.roll.actorName ?? props.roll.playerName);
 const visibilityLabel = computed(() => (props.roll.visibility === "gm" ? "GM e io" : "Privato"));
-
-function roleLabel(die: RolledDie): string {
-  if (die.role === "hope") return " Speranza";
-  if (die.role === "fear") return " Paura";
-  if (die.role === "advantage") return " Vantaggio";
-  if (die.role === "disadvantage") return " Svantaggio";
-  if (die.role === "dropped") return " scartato";
-  if (die.d100Part === "tens") return " decine";
-  if (die.d100Part === "ones") return " unità";
-  return "";
-}
 </script>
 
 <style scoped>
@@ -135,6 +137,7 @@ function roleLabel(die: RolledDie): string {
 }
 
 .roll-card__player {
+  flex-wrap: wrap;
   gap: 5px;
   margin: 5px 0;
   color: var(--obr-text);
@@ -155,6 +158,12 @@ function roleLabel(die: RolledDie): string {
 
 .roll-card__badge--private {
   background: var(--obr-control);
+  color: var(--obr-text-secondary);
+}
+
+.roll-card__badge--reaction {
+  border: 1px solid var(--obr-text-disabled);
+  background: transparent;
   color: var(--obr-text-secondary);
 }
 
@@ -185,7 +194,8 @@ function roleLabel(die: RolledDie): string {
   color: var(--fear-text);
 }
 
-.roll-card__die small {
+.roll-card__die small,
+.roll-card__modifier small {
   margin-left: 2px;
   color: var(--obr-text-secondary);
   font-size: 9px;
@@ -204,15 +214,30 @@ function roleLabel(die: RolledDie): string {
 
 .roll-card__formula {
   margin: 5px 0 0;
-  overflow: hidden;
   color: var(--obr-text-secondary);
   font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.roll-card__resource {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--hope) 18%, var(--obr-paper));
+  color: var(--hope);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.roll-card__resource--fear {
+  background: color-mix(in srgb, var(--fear) 24%, var(--obr-paper));
+  color: var(--fear-text);
 }
 
 .roll-card__total {
   flex: 0 0 auto;
+  align-self: flex-end;
   color: var(--obr-text);
   font-size: 30px;
   line-height: 1;
@@ -226,10 +251,6 @@ function roleLabel(die: RolledDie): string {
 .roll-card--compact .roll-card__player {
   margin: 3px 0;
   font-size: 11px;
-}
-
-.roll-card--compact .roll-card__formula {
-  margin-top: 2px;
 }
 
 .roll-card--compact .roll-card__total {
