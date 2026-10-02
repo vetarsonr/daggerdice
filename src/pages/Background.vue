@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from "vue";
+import { executeExternalRollRequest, parseExternalRollRequest } from "../api/rollRequest";
 import { canViewRoll, type RollerPlayer, type RollEvent } from "../dice/types";
 import { maxDiceAnimationDuration } from "../engine/constants";
 import {
@@ -12,6 +13,11 @@ import {
   openResultCard,
   openRollOverlay,
   prefersReducedMotion,
+  sendExternalPong,
+  sendExternalRollResult,
+  sendRoll,
+  subscribeToExternalPings,
+  subscribeToExternalRollRequests,
   subscribeToRolls,
   waitForRollAnimation,
   waitForObr,
@@ -21,7 +27,9 @@ import { readSettings } from "../composables/useSettings";
 
 const queue: RollEvent[] = [];
 let processing = false;
-let unsubscribe: (() => void) | undefined;
+let unsubscribeRolls: (() => void) | undefined;
+let unsubscribeRequests: (() => void) | undefined;
+let unsubscribePings: (() => void) | undefined;
 let active = true;
 
 async function processQueue(): Promise<void> {
@@ -69,6 +77,25 @@ async function recordVisibleRoll(roll: RollEvent, viewer: RollerPlayer): Promise
   }
 }
 
+async function handleExternalRollRequest(payload: unknown, player: RollerPlayer): Promise<void> {
+  const request = parseExternalRollRequest(payload);
+  if (!request || !active) return;
+
+  const roll = executeExternalRollRequest(request, player);
+
+  try {
+    await sendRoll(roll);
+  } catch {
+    return;
+  }
+
+  await sendExternalRollResult({
+    requestId: request.id,
+    total: roll.total,
+    dice: roll.dice,
+  }).catch(() => undefined);
+}
+
 onMounted(async () => {
   await waitForObr();
   if (!active) return;
@@ -80,17 +107,25 @@ onMounted(async () => {
   }
   if (!active) return;
 
-  unsubscribe = subscribeToRolls((roll) => {
+  unsubscribeRolls = subscribeToRolls((roll) => {
     if (!canViewRoll(roll, viewer)) return;
     void recordVisibleRoll(roll, viewer);
     queue.push(roll);
     void processQueue();
   });
+  unsubscribeRequests = subscribeToExternalRollRequests((payload) => {
+    void handleExternalRollRequest(payload, viewer);
+  });
+  unsubscribePings = subscribeToExternalPings(() => {
+    void sendExternalPong().catch(() => undefined);
+  });
 });
 
 onBeforeUnmount(() => {
   active = false;
-  unsubscribe?.();
+  unsubscribeRolls?.();
+  unsubscribeRequests?.();
+  unsubscribePings?.();
 });
 </script>
 

@@ -23,7 +23,11 @@ import {
   closeRollOverlay,
   openRollOverlay,
   reportRollAnimationComplete,
+  sendExternalPong,
+  sendExternalRollResult,
   sendRoll,
+  subscribeToExternalPings,
+  subscribeToExternalRollRequests,
   waitForRollAnimation,
 } from "./client";
 
@@ -104,7 +108,7 @@ describe("3D roll overlay", () => {
     await reportRollAnimationComplete("roll-1");
 
     expect(mocks.sdk.broadcast.sendMessage).toHaveBeenCalledWith(
-      "dh-dice/animation-complete",
+      "it.daggerdice/animation-complete",
       { rollId: "roll-1" },
       { destination: "LOCAL" },
     );
@@ -114,9 +118,52 @@ describe("3D roll overlay", () => {
     await sendRoll({ ...roll, visibility: "gm" });
 
     expect(mocks.sdk.broadcast.sendMessage).toHaveBeenCalledWith(
-      "dh-dice/roll",
+      "it.daggerdice/roll",
       expect.objectContaining({ visibility: "gm" }),
       { destination: "ALL" },
+    );
+  });
+
+  it("subscribes to the external local request and ping channels", () => {
+    const requestCallback = vi.fn();
+    const pingCallback = vi.fn();
+    const removeRequest = vi.fn();
+    const removePing = vi.fn();
+    mocks.sdk.broadcast.onMessage.mockReturnValueOnce(removeRequest).mockReturnValueOnce(removePing);
+
+    const stopRequest = subscribeToExternalRollRequests(requestCallback);
+    const stopPing = subscribeToExternalPings(pingCallback);
+    const receivedRequest = mocks.sdk.broadcast.onMessage.mock.calls[0]?.[1] as (event: { data: unknown }) => void;
+    const receivedPing = mocks.sdk.broadcast.onMessage.mock.calls[1]?.[1] as (event: { data: unknown }) => void;
+
+    receivedRequest({ data: { id: "request-1" } });
+    receivedPing({ data: undefined });
+    stopRequest();
+    stopPing();
+
+    expect(mocks.sdk.broadcast.onMessage).toHaveBeenNthCalledWith(1, "it.daggerdice/request", expect.any(Function));
+    expect(mocks.sdk.broadcast.onMessage).toHaveBeenNthCalledWith(2, "it.daggerdice/ping", expect.any(Function));
+    expect(requestCallback).toHaveBeenCalledWith({ id: "request-1" });
+    expect(pingCallback).toHaveBeenCalledOnce();
+    expect(removeRequest).toHaveBeenCalledOnce();
+    expect(removePing).toHaveBeenCalledOnce();
+  });
+
+  it("returns external results and pongs only to the local Owlbear client", async () => {
+    await sendExternalRollResult({ requestId: "request-1", total: 11, dice: roll.dice });
+    await sendExternalPong();
+
+    expect(mocks.sdk.broadcast.sendMessage).toHaveBeenNthCalledWith(
+      1,
+      "it.daggerdice/result",
+      { requestId: "request-1", total: 11, dice: roll.dice },
+      { destination: "LOCAL" },
+    );
+    expect(mocks.sdk.broadcast.sendMessage).toHaveBeenNthCalledWith(
+      2,
+      "it.daggerdice/pong",
+      { v: 1 },
+      { destination: "LOCAL" },
     );
   });
 });

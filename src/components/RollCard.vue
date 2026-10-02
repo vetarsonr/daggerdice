@@ -17,7 +17,7 @@
     <div class="roll-card__main">
       <div class="roll-card__content">
         <p class="roll-card__player">
-          {{ roll.playerName }}
+          {{ actorName }}
           <span v-if="roll.playerRole === 'GM'" class="roll-card__badge">GM</span>
           <span v-if="roll.visibility !== 'all'" class="roll-card__badge roll-card__badge--private">{{ visibilityLabel }}</span>
         </p>
@@ -52,9 +52,11 @@ import type { RolledDie, RollEvent } from "../dice/types";
 const props = withDefaults(defineProps<{ roll: RollEvent; compact?: boolean }>(), { compact: false });
 const emit = defineEmits<{ close: [] }>();
 
-const title = computed(() =>
+const defaultTitle = computed(() =>
   props.roll.kind === "duality" ? `Dualità: ${outcomeLabel(props.roll.outcome)}` : "Tiro libero",
 );
+const title = computed(() => props.roll.label ?? defaultTitle.value);
+const actorName = computed(() => props.roll.actorName ?? props.roll.playerName);
 const visibilityLabel = computed(() => (props.roll.visibility === "gm" ? "GM e io" : "Privato"));
 
 function roleLabel(die: RolledDie): string {

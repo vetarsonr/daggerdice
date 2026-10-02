@@ -29,6 +29,10 @@ export interface RollEvent {
   kind: RollKind;
   playerId: string;
   playerName: string;
+  /** Optional external-roll title displayed in place of the default roll title. */
+  label?: string;
+  /** Optional external actor name displayed in place of the roller's player name. */
+  actorName?: string;
   playerRole: "GM" | "PLAYER";
   visibility: RollVisibility;
   mode: RollMode;

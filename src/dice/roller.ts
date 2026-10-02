@@ -207,6 +207,8 @@ export function isRollEvent(value: unknown): value is RollEvent {
     (event.kind === "duality" || event.kind === "pool") &&
     typeof event.playerId === "string" &&
     typeof event.playerName === "string" &&
+    (event.label === undefined || typeof event.label === "string") &&
+    (event.actorName === undefined || typeof event.actorName === "string") &&
     (event.playerRole === "GM" || event.playerRole === "PLAYER") &&
     (event.visibility === "all" || event.visibility === "private" || event.visibility === "gm") &&
     (event.mode === "normal" || event.mode === "advantage" || event.mode === "disadvantage") &&

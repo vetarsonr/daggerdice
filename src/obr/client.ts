@@ -1,4 +1,5 @@
 import OBR from "@owlbear-rodeo/sdk";
+import type { ExternalRollResult } from "../api/rollRequest";
 import { isRollEvent } from "../dice/roller";
 import type { RollEvent, RollerPlayer } from "../dice/types";
 import {
@@ -7,8 +8,12 @@ import {
   DEV_BROADCAST_CHANNEL,
   DEV_ROLL_EVENT,
   OVERLAY_MODAL_ID,
+  PING_CHANNEL,
+  PONG_CHANNEL,
   RESULT_POPOVER_ID,
   ROLL_CHANNEL,
+  ROLL_REQUEST_CHANNEL,
+  ROLL_RESULT_CHANNEL,
 } from "./constants";
 
 export function isObrAvailable(): boolean {
@@ -84,6 +89,36 @@ export function subscribeToRolls(callback: (event: RollEvent) => void): () => vo
     channel?.removeEventListener("message", onMessage);
     channel?.close();
   };
+}
+
+/** Receives untrusted roll requests from another extension on this Owlbear client. */
+export function subscribeToExternalRollRequests(callback: (payload: unknown) => void): () => void {
+  if (!isObrAvailable()) return () => undefined;
+
+  return OBR.broadcast.onMessage(ROLL_REQUEST_CHANNEL, (message) => callback(message.data));
+}
+
+/** Receives extension discovery pings on this Owlbear client. */
+export function subscribeToExternalPings(callback: () => void): () => void {
+  if (!isObrAvailable()) return () => undefined;
+
+  return OBR.broadcast.onMessage(PING_CHANNEL, () => callback());
+}
+
+/** Returns the rolled values only to extensions running on this Owlbear client. */
+export async function sendExternalRollResult(result: ExternalRollResult): Promise<void> {
+  if (!isObrAvailable()) return;
+
+  await waitForObr();
+  await OBR.broadcast.sendMessage(ROLL_RESULT_CHANNEL, result, { destination: "LOCAL" });
+}
+
+/** Announces API availability only to extensions running on this Owlbear client. */
+export async function sendExternalPong(): Promise<void> {
+  if (!isObrAvailable()) return;
+
+  await waitForObr();
+  await OBR.broadcast.sendMessage(PONG_CHANNEL, { v: 1 }, { destination: "LOCAL" });
 }
 
 interface AnimationCompleteMessage {
