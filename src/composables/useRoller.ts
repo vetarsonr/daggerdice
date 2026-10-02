@@ -14,32 +14,55 @@ export function useRoller(settings: DiceSettings, history: HistoryWriter) {
   const player = reactive<RollerPlayer>({ ...developmentPlayer });
   const isRolling = ref(false);
   const error = ref<string>();
+  let pendingPlayer: Promise<boolean> | undefined;
 
-  async function loadPlayer(): Promise<void> {
-    try {
-      Object.assign(player, await getCurrentPlayer());
-    } catch {
-      error.value = "Impossibile leggere il profilo OBR. Il tiro usa il profilo Dev.";
-    }
+  function loadPlayer(): Promise<boolean> {
+    if (pendingPlayer) return pendingPlayer;
+
+    pendingPlayer = getCurrentPlayer()
+      .then((currentPlayer) => {
+        Object.assign(player, currentPlayer);
+        return true;
+      })
+      .catch(() => {
+        error.value = "Impossibile leggere il profilo OBR. Il tiro non è stato eseguito. Riprova.";
+        return false;
+      })
+      .finally(() => {
+        pendingPlayer = undefined;
+      });
+    return pendingPlayer;
   }
 
-  async function dispatch(event: RollEvent): Promise<void> {
+  async function dispatch(createEvent: () => RollEvent): Promise<void> {
+    if (isRolling.value) return;
     isRolling.value = true;
     error.value = undefined;
     try {
+      if (!(await loadPlayer())) return;
+
+      let event: RollEvent;
       try {
+        event = createEvent();
         await sendRoll(event);
         settings.mode = "normal";
-        await sendFearGained(event).catch(() => undefined);
       } catch {
         error.value = "Il tiro non è stato inviato. Riprova.";
         return;
       }
 
       try {
+        await sendFearGained(event);
+      } catch {
+        error.value = "Tiro inviato, ma la notifica Paura al companion non è stata inviata.";
+      }
+
+      try {
         await history.record(event);
       } catch {
-        error.value = "Tiro inviato, ma storico non aggiornato.";
+        error.value = error.value
+          ? `${error.value} Anche lo storico non è stato aggiornato.`
+          : "Tiro inviato, ma storico non aggiornato.";
       }
     } finally {
       isRolling.value = false;
@@ -47,31 +70,23 @@ export function useRoller(settings: DiceSettings, history: HistoryWriter) {
   }
 
   async function rollDualityNow(rollType: RollType = "action"): Promise<void> {
-    if (isRolling.value) return;
-    await dispatch(
-      rollDuality({
-        player,
-        visibility: settings.visibility,
-        mode: settings.mode,
-        modifier: settings.modifier,
-        rollType,
-      }),
-    );
+    await rollPoolNow({}, rollType);
   }
 
   async function rollPoolNow(pool: DicePool, rollType?: RollType): Promise<void> {
     if (isRolling.value) return;
     const options = {
-      player,
       visibility: settings.visibility,
       mode: settings.mode,
       modifier: settings.modifier,
     };
-    await dispatch(
-      rollType
-        ? rollDuality({ ...options, rollType, extras: pool })
-        : rollPool({ ...options, pool }),
-    );
+    const selectedPool = { ...pool };
+    await dispatch(() => {
+      const currentOptions = { ...options, player: { ...player } };
+      return rollType
+        ? rollDuality({ ...currentOptions, rollType, extras: selectedPool })
+        : rollPool({ ...currentOptions, pool: selectedPool });
+    });
   }
 
   return { player, isRolling, error, loadPlayer, rollDualityNow, rollPoolNow };

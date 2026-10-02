@@ -78,18 +78,30 @@ async function recordVisibleRoll(roll: RollEvent, viewer: RollerPlayer): Promise
   }
 }
 
-async function handleExternalRollRequest(payload: unknown, player: RollerPlayer): Promise<void> {
+async function handleExternalRollRequest(payload: unknown): Promise<void> {
   const request = parseExternalRollRequest(payload);
   if (!request || !active) return;
+
+  let player: RollerPlayer;
+  try {
+    player = await getCurrentPlayer();
+  } catch (error) {
+    console.warn("DaggerDice: impossibile leggere il giocatore per il tiro richiesto.", error);
+    return;
+  }
+  if (!active) return;
 
   const roll = executeExternalRollRequest(request, player);
 
   try {
     await sendRoll(roll);
-    await sendFearGained(roll).catch(() => undefined);
   } catch {
     return;
   }
+
+  await sendFearGained(roll).catch((error) => {
+    console.warn("DaggerDice: notifica Paura al companion non inviata.", error);
+  });
 
   await sendExternalRollResult({
     requestId: request.id,
@@ -116,7 +128,7 @@ onMounted(async () => {
     void processQueue();
   });
   unsubscribeRequests = subscribeToExternalRollRequests((payload) => {
-    void handleExternalRollRequest(payload, viewer);
+    void handleExternalRollRequest(payload);
   });
   unsubscribePings = subscribeToExternalPings(() => {
     void sendExternalPong().catch(() => undefined);

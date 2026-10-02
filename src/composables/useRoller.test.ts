@@ -1,18 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { RollEvent } from "../dice/types";
+import type { RollEvent, RollerPlayer } from "../dice/types";
 import { useRoller } from "./useRoller";
 import { DEFAULT_SETTINGS, type DiceSettings } from "./useSettings";
 
 const mocks = vi.hoisted(() => ({
   rollDuality: vi.fn(),
   rollPool: vi.fn(),
+  getCurrentPlayer: vi.fn(),
   sendRoll: vi.fn(),
   sendFearGained: vi.fn(),
 }));
 
 vi.mock("../dice/roller", () => ({ rollDuality: mocks.rollDuality, rollPool: mocks.rollPool }));
 vi.mock("../obr/client", () => ({
-  getCurrentPlayer: vi.fn(),
+  getCurrentPlayer: mocks.getCurrentPlayer,
   sendRoll: mocks.sendRoll,
   sendFearGained: mocks.sendFearGained,
 }));
@@ -42,9 +43,25 @@ function setup(overrides: Partial<DiceSettings> = {}) {
   return { roller: useRoller(settings, history), history, settings };
 }
 
+const currentPlayer: RollerPlayer = { id: "player-1", name: "Player", role: "PLAYER" };
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((complete) => {
+    resolve = complete;
+  });
+  return { promise, resolve };
+}
+
 beforeEach(() => {
-  mocks.rollDuality.mockReset().mockReturnValue(fearRoll);
+  mocks.rollDuality.mockReset().mockImplementation(({ player }: { player: RollerPlayer }) => ({
+    ...fearRoll,
+    playerId: player.id,
+    playerName: player.name,
+    playerRole: player.role,
+  }));
   mocks.rollPool.mockReset();
+  mocks.getCurrentPlayer.mockReset().mockResolvedValue(currentPlayer);
   mocks.sendRoll.mockReset().mockResolvedValue(undefined);
   mocks.sendFearGained.mockReset().mockResolvedValue(undefined);
 });
@@ -63,17 +80,20 @@ describe("roll dispatch", () => {
   });
 
   it("waits until the roll is successfully sent before notifying", async () => {
-    let completeSend!: () => void;
-    mocks.sendRoll.mockReturnValueOnce(new Promise<void>((resolve) => {
-      completeSend = resolve;
-    }));
+    const sent = deferred<void>();
+    const completeSend = deferred<void>();
+    mocks.sendRoll.mockImplementationOnce(() => {
+      sent.resolve();
+      return completeSend.promise;
+    });
     const { roller, history } = setup();
 
     const pendingRoll = roller.rollDualityNow();
+    await sent.promise;
     expect(mocks.sendRoll).toHaveBeenCalledWith(fearRoll);
     expect(mocks.sendFearGained).not.toHaveBeenCalled();
     expect(history.record).not.toHaveBeenCalled();
-    completeSend();
+    completeSend.resolve();
     await pendingRoll;
 
     expect(mocks.sendFearGained).toHaveBeenCalledExactlyOnceWith(fearRoll);
@@ -92,15 +112,130 @@ describe("roll dispatch", () => {
     expect(settings).toMatchObject({ mode: "advantage", modifier: 3 });
   });
 
-  it("still records and completes the roll when the fear notification fails", async () => {
+  it("records the roll and warns when the fear notification fails", async () => {
     mocks.sendFearGained.mockRejectedValueOnce(new Error("Companion unavailable"));
-    const { roller, history } = setup();
+    const { roller, history, settings } = setup({ mode: "advantage" });
 
     await expect(roller.rollDualityNow()).resolves.toBeUndefined();
 
     expect(history.record).toHaveBeenCalledWith(fearRoll);
-    expect(roller.error.value).toBeUndefined();
+    expect(roller.error.value).toBe("Tiro inviato, ma la notifica Paura al companion non è stata inviata.");
     expect(roller.isRolling.value).toBe(false);
+    expect(settings.mode).toBe("normal");
+  });
+
+  it("preserves both failures when the fear notification and history cannot be saved", async () => {
+    mocks.sendFearGained.mockRejectedValueOnce(new Error("Companion unavailable"));
+    const { roller, history } = setup();
+    history.record.mockRejectedValueOnce(new Error("History unavailable"));
+
+    await roller.rollDualityNow();
+
+    expect(roller.error.value).toBe(
+      "Tiro inviato, ma la notifica Paura al companion non è stata inviata. Anche lo storico non è stato aggiornato.",
+    );
+  });
+});
+
+describe("player profile before rolling", () => {
+  it("waits for the pending startup profile and stamps the roll with the real PLAYER", async () => {
+    const profile = deferred<RollerPlayer>();
+    mocks.getCurrentPlayer.mockReturnValueOnce(profile.promise);
+    const { roller } = setup();
+
+    const startup = roller.loadPlayer();
+    const pendingRoll = roller.rollPoolNow({}, "action");
+
+    expect(mocks.getCurrentPlayer).toHaveBeenCalledTimes(1);
+    expect(mocks.rollDuality).not.toHaveBeenCalled();
+    expect(mocks.sendRoll).not.toHaveBeenCalled();
+    expect(roller.isRolling.value).toBe(true);
+
+    profile.resolve(currentPlayer);
+    await Promise.all([startup, pendingRoll]);
+
+    expect(mocks.sendRoll).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ playerRole: "PLAYER", playerName: "Player" }));
+    expect(mocks.sendFearGained).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ playerRole: "PLAYER" }));
+    expect(roller.player).toEqual(currentPlayer);
+  });
+
+  it("does not generate another roll when clicked twice while loading the profile", async () => {
+    const profile = deferred<RollerPlayer>();
+    mocks.getCurrentPlayer.mockReturnValueOnce(profile.promise);
+    const { roller } = setup();
+
+    const firstRoll = roller.rollPoolNow({}, "action");
+    await roller.rollPoolNow({}, "action");
+
+    expect(mocks.getCurrentPlayer).toHaveBeenCalledTimes(1);
+    expect(mocks.rollDuality).not.toHaveBeenCalled();
+    profile.resolve(currentPlayer);
+    await firstRoll;
+
+    expect(mocks.rollDuality).toHaveBeenCalledTimes(1);
+    expect(mocks.sendRoll).toHaveBeenCalledTimes(1);
+  });
+
+  it("aborts a roll when the profile cannot be fetched and allows a later retry", async () => {
+    mocks.getCurrentPlayer.mockRejectedValueOnce(new Error("Profile unavailable"));
+    const { roller, history, settings } = setup({ mode: "advantage", modifier: 3 });
+
+    await expect(roller.rollPoolNow({}, "action")).resolves.toBeUndefined();
+
+    expect(mocks.rollDuality).not.toHaveBeenCalled();
+    expect(mocks.sendRoll).not.toHaveBeenCalled();
+    expect(mocks.sendFearGained).not.toHaveBeenCalled();
+    expect(history.record).not.toHaveBeenCalled();
+    expect(roller.isRolling.value).toBe(false);
+    expect(roller.error.value).toBe("Impossibile leggere il profilo OBR. Il tiro non è stato eseguito. Riprova.");
+    expect(settings).toMatchObject({ mode: "advantage", modifier: 3 });
+
+    await roller.rollPoolNow({}, "action");
+
+    expect(mocks.sendRoll).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ playerRole: "PLAYER" }));
+    expect(roller.error.value).toBeUndefined();
+  });
+
+  it("handles a startup profile failure without rejecting", async () => {
+    mocks.getCurrentPlayer.mockRejectedValueOnce(new Error("Profile unavailable"));
+    const { roller } = setup();
+
+    await expect(roller.loadPlayer()).resolves.toBe(false);
+
+    expect(roller.error.value).toBe("Impossibile leggere il profilo OBR. Il tiro non è stato eseguito. Riprova.");
+  });
+
+  it("refreshes the role before each roll after a GM becomes a PLAYER", async () => {
+    mocks.getCurrentPlayer.mockResolvedValueOnce({ ...currentPlayer, role: "GM" });
+    const { roller } = setup();
+
+    await roller.rollDualityNow();
+    await roller.rollDualityNow();
+
+    expect(mocks.getCurrentPlayer).toHaveBeenCalledTimes(2);
+    expect(mocks.sendRoll).toHaveBeenNthCalledWith(1, expect.objectContaining({ playerRole: "GM" }));
+    expect(mocks.sendRoll).toHaveBeenNthCalledWith(2, expect.objectContaining({ playerRole: "PLAYER" }));
+    expect(roller.player.role).toBe("PLAYER");
+  });
+
+  it("keeps the requested dice and modifier if the UI changes while waiting for the profile", async () => {
+    const profile = deferred<RollerPlayer>();
+    mocks.getCurrentPlayer.mockReturnValueOnce(profile.promise);
+    const { roller, settings } = setup({ mode: "advantage", modifier: 3 });
+    const pool = { d6: 1 };
+
+    const pendingRoll = roller.rollPoolNow(pool, "action");
+    pool.d6 = 2;
+    settings.modifier = 5;
+    settings.visibility = "private";
+    profile.resolve(currentPlayer);
+    await pendingRoll;
+
+    expect(mocks.rollDuality).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      extras: { d6: 1 }, modifier: 3, mode: "advantage", visibility: "all",
+    }));
+    expect(pool.d6).toBe(2);
+    expect(settings.modifier).toBe(5);
   });
 });
 
